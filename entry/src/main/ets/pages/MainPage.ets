@@ -6,7 +6,7 @@ import { DialogComponent } from '../view/DialogComponent';
 import { ImageList, TextList } from '../viewmodel/AccountList';
 import Logger from '../common/utils/Logger';
 import { McBarChart,McPieChart, Options } from '@mcui/mccharts';
-import { AiDialogComponent } from '../view/AiDialogComponent';
+import { AiDialogComponent, AiDialogData } from '../view/AiDialogComponent';
 
 @Entry
 @Component
@@ -40,12 +40,7 @@ struct MainPage {
   // 初始化 ai 对话框控制器，用于控制 ai 对话框的显示和隐藏
   aiDialogController: CustomDialogController = new CustomDialogController({
     // 使用DialogComponent构建对话框，传递是否为插入操作和新账户数据
-    builder: AiDialogComponent({
-      isInsert: $isInsert,
-      newAccount: $newAccount,
-      // 定义对话框确认按钮的点击事件处理函数
-      confirm: (isInsert: boolean, newAccount: AccountData) => this.accept(isInsert, newAccount)
-    }),
+    builder: AiDialogComponent(),
     // 设置对话框的样式为自定义样式
     customStyle: true,
     // 设置对话框的对齐方式为底部对齐
