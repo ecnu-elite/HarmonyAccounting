@@ -11,6 +11,6 @@ export {
   IChatCompletionMessageParam,
 } from './src/main/ets/ChatCompletionMessageParam'
 
-export { ChatCompletion } from './src/main/ets/ChatCompletion'
+export { ChatCompletion,Choice } from './src/main/ets/ChatCompletion'
 
 export { Completion } from './src/main/ets/Completions'

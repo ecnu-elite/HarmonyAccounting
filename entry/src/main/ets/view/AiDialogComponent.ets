@@ -190,7 +190,7 @@ export struct AiDialogComponent {
 
 
       // 通过流式处理获取聊天完成信息
-      Openai.getCompletion((response) => {
+      Openai.getCompletionByStream((response) => {
         let resp = response as ChatCompletion
 
         // 清空“加载中”

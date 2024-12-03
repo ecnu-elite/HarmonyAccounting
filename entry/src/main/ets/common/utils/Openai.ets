@@ -1,4 +1,4 @@
-import { ChatCompletion, ChatCompletionChunk,
+import { ChatCompletion,Choice, ChatCompletionChunk,
   ChatCompletionSystemMessageParam,
   ChatCompletionUserMessageParam,
   ChatCompletionAssistantMessageParam,
@@ -114,12 +114,73 @@ class Openai {
 
 
   // 获取流式数据并进行处理
-  async getCompletionByStream(streamFunction:(res:ChatCompletion | ChatCompletionChunk[])=>void) {
-    this.openaiClient.chat.completions.create(this.getModelParams(true))
-    .then(streamFunction)
-    .catch((error:Error) => {
-      console.log(JSON.stringify((error)));
+  async getCompletionByStream(streamFunction:(res:ChatCompletion |ChatCompletionChunk| ChatCompletionChunk[])=>void) {
+    // this.openaiClient.chat.completions.create(this.getModelParams(true))
+    // .then(streamFunction)
+    // .catch((error:Error) => {
+    //   console.log(JSON.stringify((error)));
+    // })
+
+    this.openaiClient.chat.completions.createStream(this.getModelParams(true),(messages:ChatCompletionChunk[])=>{
+
+
+      // 将一个ChatcompletionChunk数组转换为一堆ChatCompletion
+      for (let i = 0; i < messages.length; i++) {
+
+        let message = this.chatCompletionChunk2ChatCompletion(messages[i]);
+
+
+        streamFunction(message);
+      }
     })
+
+  }
+
+  chatCompletionChunk2ChatCompletion(originalMessage:ChatCompletionChunk):ChatCompletion{
+    let message: ChatCompletion;
+    let choices: Choice[] = []
+
+    for (let j = 0; j < originalMessage.choices.length; j++) {
+
+      let originalDelta = originalMessage.choices[j].delta;
+
+      let delta = new ChatCompletionMessage();
+
+      originalDelta.function_call
+      delta = {
+        role: originalDelta.role as string,
+        name: "",
+        content: originalDelta.content as string,
+
+        function_call: {
+          arguments: originalDelta.function_call?.arguments as string,
+          name: originalDelta.function_call?.name as string
+        },
+        tool_calls: []
+      }
+
+      let choice: Choice = {
+        finish_reason: originalMessage.choices[j].finish_reason as string,
+        index: originalMessage.choices[j].index,
+        message: delta,
+        logprobs: originalMessage.choices[j].logprobs
+      }
+      choices.push(choice)
+    }
+
+
+
+    message = {
+      id: originalMessage.id,
+      created: originalMessage.created,
+      model: originalMessage.model,
+      object: originalMessage.object,
+      system_fingerprint: originalMessage.system_fingerprint,
+      choices: choices
+    }
+
+
+    return message;
   }
 
 

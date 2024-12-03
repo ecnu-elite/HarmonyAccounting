@@ -1,4 +1,6 @@
 import axios, { AxiosHeaders, AxiosInstance, AxiosResponse } from '@ohos/axios'
+import { http } from '@kit.NetworkKit';
+import { BusinessError } from '@kit.BasicServicesKit';
 import { ChatCompletion } from './ChatCompletion'
 import { ChatCompletionChunk } from './ChatCompletionChunk'
 import { IChatCompletionMessageParam } from './ChatCompletionMessageParam'
@@ -10,6 +12,7 @@ import {
   ResponseFormat
 } from './Function'
 import { RequestConfig } from './OpenAI'
+import { util } from '@kit.ArkTS';
 
 export interface IChatCompletionPostData {
   messages: IChatCompletionMessageParam[],
@@ -117,6 +120,116 @@ export class ChatCompletions {
     return JSON.stringify(postData);
   }
 
+
+
+  createStream(
+    data: IChatCompletionPostData,
+    onMessage: (messages: ChatCompletionChunk[]) => void,
+  ) {
+
+
+    let url: string = ""
+    if (data.model && this._client.baseURL?.indexOf("openai.azure.com") >= 0 && !this._client.baseURL.endsWith(data.model)) {
+      url = `${this._client.baseURL}/deployments/${data.model}/chat/completions${CommonTool.encodeUrlParams(this._client.params as Record<string, string>)}`
+    } else {
+      url = `${this._client.baseURL}/chat/completions${CommonTool.encodeUrlParams(this._client.params as Record<string, string>)}`
+    }
+    let timeout = 300;
+    if (data.timeout) {
+      timeout = data.timeout
+    }
+
+    let jsonStr = ChatCompletions.parseDataToJson(data);
+
+
+    console.debug('测试流式传输');
+
+    // 创建一个http请求
+    let httpRequest = http.createHttp();
+
+    httpRequest.on('headersReceive', (header: Object) => {
+      console.debug('头头头: ' + JSON.stringify(header));
+    });
+
+    httpRequest.on('dataReceive', (data: ArrayBuffer) => {
+      const resView = new Uint8Array(data);
+
+      let textDecoder = util.TextDecoder.create('utf-8')
+      let resStr = textDecoder.decodeToString(resView);
+
+      console.info(JSON.stringify(resStr));
+
+
+      let respMsgs: ChatCompletionChunk[] = []
+
+      for (const line of resStr.split(/[\r\n]+/)) {
+        console.debug(line);
+
+        // 判断有没有data:字段
+        if (line.indexOf("data:") < 0) {
+          continue;
+        }
+
+        let msgJson = line.split("data:")[1]
+        if (msgJson.indexOf("[DONE]") >= 0) {
+          break;
+        }
+        respMsgs.push(JSON.parse(msgJson));
+      }
+
+
+      onMessage(respMsgs)
+
+
+    });
+    // 用于订阅HTTP流式响应数据接收完毕事件
+    httpRequest.on('dataEnd', () => {
+      console.debug('消息传递完成！！！No more data in response, data receive end');
+    });
+
+    // 用于订阅HTTP流式响应数据接收进度事件
+    class Data {
+      receiveSize: number = 0;
+      totalSize: number = 0;
+    }
+
+    httpRequest.on('dataReceiveProgress', (data: Data) => {
+      console.log("dataReceiveProgress receiveSize:" + data.receiveSize + ", totalSize:" + data.totalSize);
+    });
+
+
+    let streamInfo: http.HttpRequestOptions = {
+      method: http.RequestMethod.POST,  // 可选，默认为http.RequestMethod.GET
+      header: this._client.headers,
+      // 当使用POST请求时此字段用于传递请求体内容，具体格式与服务端协商确定
+      extraData: jsonStr,
+      expectDataType:  http.HttpDataType.STRING,// 可选，指定返回数据的类型
+    }
+
+    // 填写HTTP请求的URL地址，可以带参数也可以不带参数。URL地址需要开发者自定义。请求的参数可以在extraData中指定
+    httpRequest.requestInStream(url, streamInfo).then((data: number) => {
+      console.info("requestInStream OK!");
+      console.info('ResponseCode :' + JSON.stringify(data));
+      // 取消订阅HTTP响应头事件
+      httpRequest.off('headersReceive');
+      // 取消订阅HTTP流式响应数据接收事件
+      httpRequest.off('dataReceive');
+      // 取消订阅HTTP流式响应数据接收进度事件
+      httpRequest.off('dataReceiveProgress');
+      // 取消订阅HTTP流式响应数据接收完毕事件
+      httpRequest.off('dataEnd');
+      // 当该请求使用完毕时，调用destroy方法主动销毁
+      httpRequest.destroy();
+    }).catch((error: Error) => {
+      console.error(JSON.stringify(error));
+      console.error(error.message)
+
+    });
+
+
+  }
+
+
   create(
     data: IChatCompletionPostData
   ): Promise<ChatCompletion | ChatCompletionChunk[]> {
@@ -135,6 +248,9 @@ export class ChatCompletions {
       }
 
       let jsonStr = ChatCompletions.parseDataToJson(data);
+
+
+
       axios.request<string|ChatCompletion, AxiosResponse<string|ChatCompletion>>({
         method: "post",
         url: url,
@@ -170,8 +286,8 @@ export class ChatCompletions {
           reject(error)
         });
 
-    }
-    )
+
+    })
   }
 }
 
