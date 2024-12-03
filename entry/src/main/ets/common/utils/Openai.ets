@@ -112,81 +112,6 @@ class Openai {
 
 
 
-
-  // 获取流式数据并进行处理
-  async getCompletionByStream(streamFunction:(res:ChatCompletion |ChatCompletionChunk| ChatCompletionChunk[])=>void,beforeResponse:()=>void = ()=>{}) {
-    // this.openaiClient.chat.completions.create(this.getModelParams(true))
-    // .then(streamFunction)
-    // .catch((error:Error) => {
-    //   console.log(JSON.stringify((error)));
-    // })
-
-    beforeResponse();
-
-    this.openaiClient.chat.completions.createStream(this.getModelParams(true),(messages:ChatCompletionChunk[])=>{
-
-
-      // 将一个ChatcompletionChunk数组转换为一堆ChatCompletion
-      for (let i = 0; i < messages.length; i++) {
-
-        let message = this.chatCompletionChunk2ChatCompletion(messages[i]);
-
-
-        streamFunction(message);
-      }
-    })
-
-  }
-
-  chatCompletionChunk2ChatCompletion(originalMessage:ChatCompletionChunk):ChatCompletion{
-    let message: ChatCompletion;
-    let choices: Choice[] = []
-
-    for (let j = 0; j < originalMessage.choices.length; j++) {
-
-      let originalDelta = originalMessage.choices[j].delta;
-
-      let delta = new ChatCompletionMessage();
-
-      originalDelta.function_call
-      delta = {
-        role: originalDelta.role as string,
-        name: "",
-        content: originalDelta.content as string,
-
-        function_call: {
-          arguments: originalDelta.function_call?.arguments as string,
-          name: originalDelta.function_call?.name as string
-        },
-        tool_calls: []
-      }
-
-      let choice: Choice = {
-        finish_reason: originalMessage.choices[j].finish_reason as string,
-        index: originalMessage.choices[j].index,
-        message: delta,
-        logprobs: originalMessage.choices[j].logprobs
-      }
-      choices.push(choice)
-    }
-
-
-
-    message = {
-      id: originalMessage.id,
-      created: originalMessage.created,
-      model: originalMessage.model,
-      object: originalMessage.object,
-      system_fingerprint: originalMessage.system_fingerprint,
-      choices: choices
-    }
-
-
-    return message;
-  }
-
-
-
   // 获取初始化的模型参数，用于构造请求
   getModelParams(isStream:boolean): IChatCompletionPostData {
 
@@ -249,7 +174,96 @@ class Openai {
     chatFunction(response)
   }
 
+  // 获取流式数据并进行处理
+  async getCompletionByStream(streamFunction:(res:ChatCompletion |ChatCompletionChunk| ChatCompletionChunk[])=>void,
+    beforeResponse:()=>void = ()=>{},
+    afterResponse:(totalResult:ChatCompletion)=> void = (totalResult)=>{}) {
+    // this.openaiClient.chat.completions.create(this.getModelParams(true))
+    // .then(streamFunction)
+    // .catch((error:Error) => {
+    //   console.log(JSON.stringify((error)));
+    // })
 
+    beforeResponse();
+
+    let totalResult:ChatCompletion|undefined = undefined;
+
+    this.openaiClient.chat.completions.createStream(this.getModelParams(true),(messages:ChatCompletionChunk[])=>{
+
+
+      // 将一个ChatcompletionChunk数组转换为一堆ChatCompletion
+      for (let i = 0; i < messages.length; i++) {
+
+        let message = this.chatCompletionChunk2ChatCompletion(messages[i]);
+
+        if (totalResult != undefined) {
+          totalResult.choices[0].message.content = (totalResult.choices[0].message.content as string) + message.choices[0].message.content;
+        } else {
+          totalResult = message;
+        }
+
+        streamFunction(message);
+      }
+    })
+
+    if (totalResult != undefined) {
+      afterResponse(totalResult);
+    }
+
+
+  }
+
+  /**
+   * 将ChatCompletionChunk转换为ChatCompletion
+   * @param originalMessage 原先的消息
+   * @returns 转换后的消息
+   */
+  chatCompletionChunk2ChatCompletion(originalMessage:ChatCompletionChunk):ChatCompletion{
+    let message: ChatCompletion;
+    let choices: Choice[] = []
+
+    for (let j = 0; j < originalMessage.choices.length; j++) {
+
+      let originalDelta = originalMessage.choices[j].delta;
+
+      let delta = new ChatCompletionMessage();
+
+      originalDelta.function_call
+      delta = {
+        role: originalDelta.role as string,
+        name: "",
+        content: originalDelta.content as string,
+
+        function_call: {
+          arguments: originalDelta.function_call?.arguments as string,
+          name: originalDelta.function_call?.name as string
+        },
+        tool_calls: []
+      }
+
+      let choice: Choice = {
+        finish_reason: originalMessage.choices[j].finish_reason as string,
+        index: originalMessage.choices[j].index,
+        message: delta,
+        logprobs: originalMessage.choices[j].logprobs
+      }
+      choices.push(choice)
+    }
+
+
+
+    message = {
+      id: originalMessage.id,
+      created: originalMessage.created,
+      model: originalMessage.model,
+      object: originalMessage.object,
+      system_fingerprint: originalMessage.system_fingerprint,
+      choices: choices
+    }
+
+
+    return message;
+  }
 
 
 }

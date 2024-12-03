@@ -151,7 +151,6 @@ export struct AiDialogComponent {
               functionResult: ''
             });
 
-            //TODO 用户消息需要合并
             //TODO 工具调用相关操作需要实现
 
 
@@ -236,9 +235,6 @@ export struct AiDialogComponent {
       getContext(this).eventHub.emit('messages', this.data.messages);
 
 
-
-
-
       // 通过流式处理获取聊天完成信息
       Openai.getCompletionByStream((response) => {
 
@@ -249,17 +245,12 @@ export struct AiDialogComponent {
         this.loadingStringIndex = (this.loadingStringIndex + 1) % this.loadingStrings.length
 
         console.debug("Openai", "getCompletionByStream", JSON.stringify(resp))
-
-
-
-
         console.debug("接收到消息",JSON.stringify(resp.choices[0].message))
 
 
         for (let i = 0; i < resp.choices.length; i++) {
           let choice = resp.choices[i]
 
-          Openai.addMessage(choice.message)
 
           if (
             (choice.finish_reason === "function_call" || choice.finish_reason === "tool_calls") &&
@@ -324,6 +315,8 @@ export struct AiDialogComponent {
       },()=>{
         // 清空“加载中”
         this.data.messages[messageLength].content = ""
+      },(totalResponse)=>{
+        Openai.addMessage(totalResponse.choices[0].message)
       })
 
       console.debug("Openai", "chat", "end")
