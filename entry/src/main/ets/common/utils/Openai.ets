@@ -114,12 +114,14 @@ class Openai {
 
 
   // 获取流式数据并进行处理
-  async getCompletionByStream(streamFunction:(res:ChatCompletion |ChatCompletionChunk| ChatCompletionChunk[])=>void) {
+  async getCompletionByStream(streamFunction:(res:ChatCompletion |ChatCompletionChunk| ChatCompletionChunk[])=>void,beforeResponse:()=>void = ()=>{}) {
     // this.openaiClient.chat.completions.create(this.getModelParams(true))
     // .then(streamFunction)
     // .catch((error:Error) => {
     //   console.log(JSON.stringify((error)));
     // })
+
+    beforeResponse();
 
     this.openaiClient.chat.completions.createStream(this.getModelParams(true),(messages:ChatCompletionChunk[])=>{
 

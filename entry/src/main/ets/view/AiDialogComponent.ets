@@ -9,9 +9,32 @@ import { ChatCompletion, ChatCompletionChunk, ChatCompletionUserMessageParam } f
 export class AiDialogData{
 
 
-  public messages: Array<ChatItem> = [];
-  public inputText: string = '';
-  public isLoading: boolean = false;
+  public messages: Array<ChatItem>;
+  public inputText: string;
+  public isLoading: boolean;
+  public loadingString: string;
+
+  constructor() {
+    this.messages = ChatList;
+    this.inputText = '';
+    this.isLoading = false;
+    this.loadingString = '加载中...';
+  }
+  //
+  // constructor(messages: Array<ChatItem>, inputText: string, isLoading: boolean) {
+  //   this.messages = messages;
+  //   this.inputText = inputText;
+  //   this.isLoading = isLoading;
+  // }
+  //
+  // public messages: Array<ChatItem> = [];
+  // public inputText: string = '';
+  // public isLoading: boolean = false;
+
+
+
+
+
 }
 
 
@@ -21,6 +44,14 @@ export struct AiDialogComponent {
 
   @State data: AiDialogData = new AiDialogData();
 
+  loadingStrings: string[] = [
+    '加载中...',
+    '加载中..',
+    '加载中.',
+  ]
+
+  loadingStringIndex: number = 0;
+
 
   // 构建方法，用于创建和配置用户界面组件
   build() {
@@ -28,6 +59,16 @@ export struct AiDialogComponent {
     Column() {
       Scroll() {
         Column(){
+
+
+          if (this.data.isLoading){
+            Text(this.data.loadingString)
+              .backgroundColor('#f0f0f0')
+              .borderRadius(10)
+              .padding(10);
+          }
+
+
           ForEach(this.data.messages, (message:ChatItem) => {
             //message.id 表示消息 id
             //message.name 表示消息发送名字
@@ -110,6 +151,9 @@ export struct AiDialogComponent {
               functionResult: ''
             });
 
+            //TODO 用户消息需要合并
+            //TODO 工具调用相关操作需要实现
+
 
             // 添加用户信息消息
             Openai.messageList.push(new ChatCompletionUserMessageParam(content))
@@ -186,18 +230,30 @@ export struct AiDialogComponent {
         functionResult: ''
       })
 
+      this.data.isLoading = false;
+      this.data.isLoading = true;
+      // getContext(this).eventHub.emit('chat', {});
+      getContext(this).eventHub.emit('messages', this.data.messages);
+
+
 
 
 
       // 通过流式处理获取聊天完成信息
       Openai.getCompletionByStream((response) => {
+
         let resp = response as ChatCompletion
 
-        // 清空“加载中”
-        this.data.messages[messageLength].content = ""
 
+        this.data.loadingString = this.loadingStrings[this.loadingStringIndex]
+        this.loadingStringIndex = (this.loadingStringIndex + 1) % this.loadingStrings.length
 
         console.debug("Openai", "getCompletionByStream", JSON.stringify(resp))
+
+
+
+
+        console.debug("接收到消息",JSON.stringify(resp.choices[0].message))
 
 
         for (let i = 0; i < resp.choices.length; i++) {
@@ -265,6 +321,9 @@ export struct AiDialogComponent {
         console.log("函数调用完成返回")
 
 
+      },()=>{
+        // 清空“加载中”
+        this.data.messages[messageLength].content = ""
       })
 
       console.debug("Openai", "chat", "end")
