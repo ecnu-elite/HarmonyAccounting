@@ -4,7 +4,8 @@ import { ChatCompletion,Choice, ChatCompletionChunk,
   ChatCompletionAssistantMessageParam,
   ChatCompletionFunctionMessageParam,
   IChatCompletionMessageParam, OpenAI,
-  ChatCompletionToolMessageParam } from '@adrian_wang/openai'
+  ChatCompletionToolMessageParam,ChatCompletionTokenLogprob,
+  ChatCompletionMessageToolCall } from '@adrian_wang/openai'
 import ChatItem from '../../viewmodel/ChatItem';
 
 import { AiDialogComponent, AiDialogData } from '../../view/AiDialogComponent';
@@ -12,6 +13,7 @@ import { HashMap } from '@kit.ArkTS';
 import { IChatCompletionPostData } from '@adrian_wang/openai/src/main/ets/AsyncCall';
 import { ChatCompletionToolParam } from '@adrian_wang/openai/src/main/ets/Function';
 import { ChatCompletionMessage } from '@adrian_wang/openai/src/main/ets/ChatCompletion';
+import { emitter } from '@kit.BasicServicesKit';
 
 @Observed
 class Openai {
@@ -177,12 +179,9 @@ class Openai {
   // 获取流式数据并进行处理
   async getCompletionByStream(streamFunction:(res:ChatCompletion |ChatCompletionChunk| ChatCompletionChunk[])=>void,
     beforeResponse:()=>void = ()=>{},
-    afterResponse:(totalResult:ChatCompletion)=> void = (totalResult)=>{}) {
-    // this.openaiClient.chat.completions.create(this.getModelParams(true))
-    // .then(streamFunction)
-    // .catch((error:Error) => {
-    //   console.log(JSON.stringify((error)));
-    // })
+    processTotalResult:(totalResult:ChatCompletion)=> void = ()=>{},
+    afterResponse:()=>void = ()=>{}
+  ) {
 
     beforeResponse();
 
@@ -203,12 +202,20 @@ class Openai {
         }
 
         streamFunction(message);
+
+
+      }
+
+      afterResponse();
+
+      if (totalResult != undefined) {
+        processTotalResult(totalResult);
       }
     })
 
-    if (totalResult != undefined) {
-      afterResponse(totalResult);
-    }
+
+
+
 
 
   }
@@ -219,6 +226,11 @@ class Openai {
    * @returns 转换后的消息
    */
   chatCompletionChunk2ChatCompletion(originalMessage:ChatCompletionChunk):ChatCompletion{
+
+
+    console.debug("Openai", "chatCompletionChunk2ChatCompletion", JSON.stringify(originalMessage))
+
+
     let message: ChatCompletion;
     let choices: Choice[] = []
 
@@ -227,6 +239,16 @@ class Openai {
       let originalDelta = originalMessage.choices[j].delta;
 
       let delta = new ChatCompletionMessage();
+
+
+      let originalToolCalls = JSON.stringify(originalDelta.tool_calls);
+
+      if (originalToolCalls == undefined) {
+        originalToolCalls = "[]";
+      }
+
+      let toolCalls: ChatCompletionMessageToolCall[] = JSON.parse(originalToolCalls);
+
 
       originalDelta.function_call
       delta = {
@@ -238,7 +260,7 @@ class Openai {
           arguments: originalDelta.function_call?.arguments as string,
           name: originalDelta.function_call?.name as string
         },
-        tool_calls: []
+        tool_calls: toolCalls
       }
 
       let choice: Choice = {

@@ -141,29 +141,25 @@ export class ChatCompletions {
 
     let jsonStr = ChatCompletions.parseDataToJson(data);
 
-
-    console.debug('测试流式传输');
-
     // 创建一个http请求
     let httpRequest = http.createHttp();
 
     httpRequest.on('headersReceive', (header: Object) => {
-      console.debug('头头头: ' + JSON.stringify(header));
+      console.debug('发送的消息头: ' + JSON.stringify(header));
     });
 
     httpRequest.on('dataReceive', (data: ArrayBuffer) => {
+
       const resView = new Uint8Array(data);
 
       let textDecoder = util.TextDecoder.create('utf-8')
       let resStr = textDecoder.decodeToString(resView);
 
-      console.info(JSON.stringify(resStr));
-
+      console.debug("receiver data: " + resStr);
 
       let respMsgs: ChatCompletionChunk[] = []
 
       for (const line of resStr.split(/[\r\n]+/)) {
-        console.debug(line);
 
         // 判断有没有data:字段
         if (line.indexOf("data:") < 0) {
