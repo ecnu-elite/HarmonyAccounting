@@ -299,27 +299,29 @@ export struct AiDialogComponent {
           console.debug("调用函数",functionName,functionArguments);
 
           //调用具体函数
-          let res = Openai.callFunction(functionName,functionArguments);
-          console.debug("调用函数返回：",res)
+          Openai.callFunction(functionName,functionArguments,(res)=>{
+            console.debug("调用函数返回：",res)
 
 
-          // 修改函数调用结果
-          console.debug("显示调用结果")
-          this.data.messages[messageLength].functionResult = res
+            // 修改函数调用结果
+            console.debug("显示调用结果")
+            this.data.messages[messageLength].functionResult = res
 
-          console.debug("添加工具消息")
+            console.debug("添加工具消息")
 
-          // 添加工具信息消息
-          Openai.addToolMessage(res,currentMessage.functionName,toolCallId)
+            // 添加工具信息消息
+            Openai.addToolMessage(res,currentMessage.functionName,toolCallId)
 
-          console.log("函数调用完成返回")
+            console.log("函数调用完成返回")
 
-          isToolCall = false;
-          functionName = "";
-          functionArguments = "";
-          toolCallId = "";
+            isToolCall = false;
+            functionName = "";
+            functionArguments = "";
+            toolCallId = "";
 
-          getContext(this).eventHub.emit(nextStep);
+            getContext(this).eventHub.emit(nextStep);
+          });
+
 
         }
       })

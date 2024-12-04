@@ -22,7 +22,7 @@ export class ChatCompletionToolParam {
 export class FunctionDefinition {
   name: string = ""
   description: string = ""
-  parameters: Map<string, object> = new Map()
+  parameters: Record<string, ESObject> = {}
 }
 
 export class ChatCompletionFunctionCallOptionParam {

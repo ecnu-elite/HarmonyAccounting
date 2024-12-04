@@ -139,8 +139,8 @@ class Openai {
 
 
   // 调用工具
-  callFunction(functionName:string, functionArguments:string):string {
-		return new Tool().callFunction(functionName,functionArguments);
+  callFunction(functionName:string, functionArguments:string,callback: (res:string)=>void) {
+		new Tool().callFunction(functionName,functionArguments,callback);
 	}
 
 
