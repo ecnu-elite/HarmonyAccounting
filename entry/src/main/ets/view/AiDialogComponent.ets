@@ -1,9 +1,8 @@
 
 import Openai from '../common/utils/Openai'
-
 import CommonConstants from '../common/constants/CommonConstants';
-import ChatItem, { ChatList } from '../viewmodel/ChatItem';
-import { ChatCompletion, ChatCompletionChunk, ChatCompletionUserMessageParam } from '@adrian_wang/openai';
+import ChatItem from '../viewmodel/ChatItem';
+import { ChatCompletion } from '@adrian_wang/openai';
 
 @Observed
 export class AiDialogData{
@@ -20,21 +19,6 @@ export class AiDialogData{
     this.isLoading = false;
     this.loadingString = '加载中...';
   }
-  //
-  // constructor(messages: Array<ChatItem>, inputText: string, isLoading: boolean) {
-  //   this.messages = messages;
-  //   this.inputText = inputText;
-  //   this.isLoading = isLoading;
-  // }
-  //
-  // public messages: Array<ChatItem> = [];
-  // public inputText: string = '';
-  // public isLoading: boolean = false;
-
-
-
-
-
 }
 
 
@@ -178,6 +162,7 @@ export struct AiDialogComponent {
         .height($r('app.float.button_height'))
         .onClick(() => {
           this.data.messages = [];
+          Openai.messageList = [];
         });
       }
       .height($r('app.float.component_size_M'))
@@ -216,7 +201,7 @@ export struct AiDialogComponent {
     let isToolCall:boolean = false;
 
     let chatOperation = (tips:string,nextStep:string)=>{
-      console.debug(tips);
+      console.debug("tips:",tips);
 
       // 添加一个新的聊天项到消息列表中，并发送更新后的消息列表事件
       let messageLength = this.data.messages.length;
@@ -258,12 +243,6 @@ export struct AiDialogComponent {
             choice.message.tool_calls !== undefined &&
               choice.message.tool_calls.length > 0
           ) {
-
-
-            console.debug("看到这条消息，说明已经进入了函数调用");
-
-
-            //TODO 实现工具类消息合并
             isToolCall = true
             let functionCall = choice.message.tool_calls[0]
 
@@ -333,13 +312,12 @@ export struct AiDialogComponent {
           // 添加工具信息消息
           Openai.addToolMessage(res,currentMessage.functionName,toolCallId)
 
-
-
           console.log("函数调用完成返回")
 
           isToolCall = false;
           functionName = "";
           functionArguments = "";
+          toolCallId = "";
 
           getContext(this).eventHub.emit(nextStep);
 
@@ -352,12 +330,20 @@ export struct AiDialogComponent {
 
 
     // 对话事件
-    getContext(this).eventHub.on("userMessageSend",(message:Record<string,string|number>) => {
-      chatOperation("用户消息发送完成，开始对话","toolCallEnd");
+    getContext(this).eventHub.on("userMessageSend",() => {
+
+      // 延迟一秒发送消息
+      setTimeout(()=>{
+        chatOperation("用户消息发送完成，开始对话","toolCallEnd");
+      },500)
+
     })
 
     getContext(this).eventHub.on("toolCallEnd",()=>{
-      chatOperation("工具调用结束，继续下一步","userMessageSend");
+      setTimeout(()=>{
+        chatOperation("工具调用结束，继续下一步","userMessageSend");
+      },500)
+
     })
 
   }

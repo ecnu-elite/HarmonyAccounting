@@ -1,7 +1,7 @@
 import axios, { AxiosHeaders, AxiosInstance, AxiosResponse } from '@ohos/axios'
 import { http } from '@kit.NetworkKit';
-import { BusinessError } from '@kit.BasicServicesKit';
-import { ChatCompletion } from './ChatCompletion'
+import { BusinessError, emitter } from '@kit.BasicServicesKit';
+import { ChatCompletion, ChatCompletionMessage } from './ChatCompletion'
 import { ChatCompletionChunk } from './ChatCompletionChunk'
 import { IChatCompletionMessageParam } from './ChatCompletionMessageParam'
 import { CommonTool } from './CommonTool'
@@ -58,6 +58,25 @@ export class ChatCompletions {
   public static parseDataToJson(data: IChatCompletionPostData): string {
     let postData : Map<string,object> = new Map();
     if (data.messages) {
+
+      for (let i = 0; i < data.messages.length; i++) {
+
+        if(data.messages[i].role == "assistant"){
+
+          let oneMessage = data.messages[i] as ChatCompletionMessage;
+
+          if(oneMessage.tool_calls != undefined && oneMessage.tool_calls.length == 0) {
+
+
+            oneMessage.tool_calls = undefined
+          }
+
+          data.messages[i] = oneMessage
+        }
+
+      }
+
+
       postData["messages"] = data.messages;
     }
     if (data.model) {
@@ -172,14 +191,11 @@ export class ChatCompletions {
         }
         respMsgs.push(JSON.parse(msgJson));
       }
-
-
       onMessage(respMsgs)
-
-
     });
     // 用于订阅HTTP流式响应数据接收完毕事件
     httpRequest.on('dataEnd', () => {
+      emitter.emit("httpEnd");
       console.debug('消息传递完成！！！No more data in response, data receive end');
     });
 
@@ -193,6 +209,8 @@ export class ChatCompletions {
       console.log("dataReceiveProgress receiveSize:" + data.receiveSize + ", totalSize:" + data.totalSize);
     });
 
+
+    console.warn("传输的数据！",jsonStr)
 
     let streamInfo: http.HttpRequestOptions = {
       method: http.RequestMethod.POST,  // 可选，默认为http.RequestMethod.GET

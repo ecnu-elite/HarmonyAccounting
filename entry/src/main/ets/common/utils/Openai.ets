@@ -13,6 +13,7 @@ import { AiDialogComponent, AiDialogData } from '../../view/AiDialogComponent';
 import { IChatCompletionPostData } from '@adrian_wang/openai/src/main/ets/AsyncCall';
 import { ChatCompletionToolParam } from '@adrian_wang/openai/src/main/ets/Function';
 import { ChatCompletionMessage } from '@adrian_wang/openai/src/main/ets/ChatCompletion';
+import { emitter } from '@kit.BasicServicesKit';
 
 @Observed
 class Openai {
@@ -176,7 +177,8 @@ class Openai {
   }
 
   // 获取流式数据并进行处理
-  async getCompletionByStream(streamFunction:(res:ChatCompletion |ChatCompletionChunk| ChatCompletionChunk[])=>void,
+  async getCompletionByStream(
+    streamFunction:(res:ChatCompletion |ChatCompletionChunk| ChatCompletionChunk[])=>void,
     beforeResponse:()=>void = ()=>{},
     processTotalResult:(totalResult:ChatCompletion)=> void = ()=>{},
     afterResponse:()=>void = ()=>{}
@@ -186,7 +188,9 @@ class Openai {
 
     let totalResult:ChatCompletion|undefined = undefined;
 
-    this.openaiClient.chat.completions.createStream(this.getModelParams(true),(messages:ChatCompletionChunk[])=>{
+    this.openaiClient.chat.completions.createStream(
+      this.getModelParams(true),
+      (messages:ChatCompletionChunk[])=>{
 
 
       // 将一个ChatcompletionChunk数组转换为一堆ChatCompletion
@@ -195,7 +199,9 @@ class Openai {
         let message = this.chatCompletionChunk2ChatCompletion(messages[i]);
 
         if (totalResult != undefined) {
-          totalResult.choices[0].message.content = (totalResult.choices[0].message.content as string) + message.choices[0].message.content;
+          if (message.choices[0].message.content != undefined) {
+            totalResult.choices[0].message.content = (totalResult.choices[0].message.content as string) + message.choices[0].message.content;
+          }
         } else {
           totalResult = message;
         }
@@ -222,8 +228,14 @@ class Openai {
 
               let toolCall:ChatCompletionMessageToolCall = JSON.parse(JSON.stringify(messages[i].choices[0].delta.tool_calls[i]));
 
-              totalResult.choices[0].message.tool_calls[i].function.name = toolCall.function.name;
-              totalResult.choices[0].message.tool_calls[i].function.arguments += toolCall.function.arguments;
+
+              if(toolCall.function.name != undefined){
+                totalResult.choices[0].message.tool_calls[i].function.name = toolCall.function.name;
+              }
+
+              if (toolCall.function.arguments != undefined) {
+                totalResult.choices[0].message.tool_calls[i].function.arguments += toolCall.function.arguments;
+              }
             }
           }
         }
@@ -234,21 +246,25 @@ class Openai {
 
       }
 
+    })
+
+
+    emitter.on("httpEnd",()=>{
 
       if (totalResult != undefined) {
         processTotalResult(totalResult);
       }
 
+      setTimeout(() => {
+        afterResponse();
+      }, 300);
 
-      afterResponse();
+      // afterResponse();
 
+
+      emitter.off("httpEnd");
 
     })
-
-
-
-
-
 
   }
 
