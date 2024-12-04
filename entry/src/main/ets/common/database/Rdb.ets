@@ -64,11 +64,14 @@ export default class Rdb {
    */
   insertData(data: relationalStore.ValuesBucket, callback: Function = () => {
   }) {
+
     // 检查回调函数是否有效
     if (!callback || typeof callback === 'undefined' || callback === undefined) {
       Logger.info(CommonConstants.RDB_TAG, 'insertData() has no callback!');
       return;
     }
+
+
     let resFlag: boolean = false;
     const valueBucket: relationalStore.ValuesBucket = data;
     // 如果rdbStore实例存在，则调用insert方法插入数据

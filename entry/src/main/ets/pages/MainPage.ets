@@ -41,6 +41,16 @@ struct MainPage {
   aiDialogController: CustomDialogController = new CustomDialogController({
     // 使用DialogComponent构建对话框，传递是否为插入操作和新账户数据
     builder: AiDialogComponent(),
+    cancel: () => {
+      // 获取RDB存储，回调函数中将执行对数据库的操作
+      this.AccountTable.getRdbStore(() => {
+        // 查询账户数据，从0开始，返回所有匹配的结果
+        this.AccountTable.query(0, (result: AccountData[]) => {
+          // 将查询结果赋值给accounts属性
+          this.accounts = result;
+        }, true);
+      });
+    },
     // 设置对话框的样式为自定义样式
     customStyle: true,
     // 设置对话框的对齐方式为底部对齐
@@ -76,6 +86,7 @@ struct MainPage {
    * 此方法用于在组件出现之前获取并设置账户数据。
    */
   aboutToAppear() {
+
     // 获取RDB存储，回调函数中将执行对数据库的操作
     this.AccountTable.getRdbStore(() => {
       // 查询账户数据，从0开始，返回所有匹配的结果
@@ -84,6 +95,7 @@ struct MainPage {
         this.accounts = result;
       }, true);
     });
+
   }
 
   // 参数：字符串时间，"2024-09-11 10:18:19"

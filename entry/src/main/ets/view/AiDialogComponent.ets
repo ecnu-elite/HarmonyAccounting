@@ -298,7 +298,7 @@ export struct AiDialogComponent {
 
           console.debug("调用函数",functionName,functionArguments);
 
-          // TODO 调用具体函数
+          //调用具体函数
           let res = Openai.callFunction(functionName,functionArguments);
           console.debug("调用函数返回：",res)
 

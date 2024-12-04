@@ -8,6 +8,7 @@ import { ChatCompletion,Choice, ChatCompletionChunk,
   ChatCompletionMessageToolCall} from '@adrian_wang/openai'
 import ChatItem from '../../viewmodel/ChatItem';
 import AccountData from '../../viewmodel/AccountData';
+import { Tool } from './Tool';
 
 
 import { AiDialogData } from '../../view/AiDialogComponent';
@@ -25,9 +26,13 @@ class Openai {
 
   constructor() {
     this.openaiClient = new OpenAI(
-      "sk-sX5SuWY74QzIusIjfKaefj416JVXYRwCX9LGfSCsVx069AUv",
+      // "sk-sX5SuWY74QzIusIjfKaefj416JVXYRwCX9LGfSCsVx069AUv",
+      // "sk-y390j1shuvAdFLxikmGcncnPju28383TD7xN6bEreTfxtMkC",
+      "sk-8285fe317edc44ef95f029be9b7cfe94",
       undefined,
-      "https://api.chatanywhere.tech/v1",
+      // "https://api.chatanywhere.tech/v1",
+      // "https://chatapi.littlewheat.com/v1",
+      "https://dashscope.aliyuncs.com/compatible-mode/v1",
     )
     this.messageList = []
   }
@@ -118,116 +123,24 @@ class Openai {
   // 获取初始化的模型参数，用于构造请求
   getModelParams(isStream:boolean): IChatCompletionPostData {
 
-    let tools: ChatCompletionToolParam[] = []
+    let tools = new Tool().getTools();
 
-
-
-    let parameters: Map<string, object>;
-
-
-
-    /*TODO*******************************************************************
-     *                     这里添加函数清单                                    *
-     *TODO*******************************************************************/
-    parameters = new Map<string, object>();
-    let time_format = new Map<string, object>();
-
-    time_format["type"] = "string"
-    time_format["description"] = "The format of the time"
-
-    parameters["type"] = "object"
-    parameters["properties"] = {
-      "time_format": time_format
-    }
-
-    tools.push({
-      function:{
-        name: "get_current_time",
-        description: "Get the current time",
-        parameters:parameters
-      },
-      type: "function"
-    })
-    let bill_parameters = new Map<string, object>();
-    let bill_properties = new Map<string, object>();
-
-    bill_properties["category"] = {
-      "type": "string",
-      "description": "The category of the bill"
-    };
-    bill_properties["name"] = {
-      "type": "string",
-      "description": "The name of the bill"
-    };
-    bill_properties["amount"] = {
-      "type": "number",
-      "description": "The amount of the bill"
-    };
-    bill_properties["time"] = {
-      "type": "string",
-      "description": "The time of the bill"
-    };
-
-    let items: Map<string, object> = new Map<string, object>();
-
-    items["type"] = "object";
-    items["properties"] = bill_properties;
-
-    let bills = new Map<string, object>();
-
-    bills["type"] = "array";
-    bills["items"] = items;
-
-    bill_parameters["type"] = "object";
-    bill_parameters["properties"] = {
-      "bills": bills
-    };
-
-    tools.push({
-      function: {
-        name: "add_bill",
-        description: "Add a new bill",
-        parameters: bill_parameters
-      },
-      type: "function"
-    });
-
-    /***********************************************************************/
-
-
-
-
+    console.debug("tools",JSON.stringify(tools));
 
 
     return {
       messages: this.messageList,
-      model: "gpt-4o-mini",
+      // model: "gpt-4o-mini",
+      model: "qwen-plus",
       stream: isStream,
       tools: tools
     }
   }
 
 
+  // 调用工具
   callFunction(functionName:string, functionArguments:string):string {
-
-
-
-    switch (functionName) {
-      case "get_current_time":
-        return new Date().toLocaleTimeString();
-      case "add_bill":
-
-        // 尝试解析arguments，如果失败则返回失败信息
-        try {
-          let argumentsObject: AccountData = JSON.parse(functionArguments);
-        } catch (error) {
-          return "Failed to parse arguments";
-        }
-
-        return "Bill added successfully";
-    }
-
-		return "Function is not implemented";
+		return new Tool().callFunction(functionName,functionArguments);
 	}
 
 
@@ -274,35 +187,32 @@ class Openai {
           totalResult = message;
         }
 
-        // // 将Function Call和Tool的分块消息添加到消息中
-        // if(message.choices[0].message.function_call != undefined){
-        //   if(totalResult.choices[0].message.function_call == undefined){
-        //     totalResult.choices[0].message.function_call = new FunctionCall();
-        //   }else{
-        //
-        //     if(messages[i].choices[0].delta.function_call?.name != undefined){
-        //       totalResult.choices[0].message.function_call.name += messages[i].choices[0].delta.function_call?.name;
-        //     }
-        //
-        //     totalResult.choices[0].message.function_call.arguments +=  messages[i].choices[0].delta.function_call?.arguments;
-        //   }
-        // }
-
         if(message.choices[0].message.tool_calls != undefined){
           if(totalResult.choices[0].message.tool_calls == undefined){
             totalResult.choices[0].message.tool_calls = [];
           }else{
-            for(let i = 0; i < message.choices[0].message.tool_calls.length; i++){
+            for(let j = 0; j < message.choices[0].message.tool_calls.length; j++){
 
-              let toolCall:ChatCompletionMessageToolCall = JSON.parse(JSON.stringify(messages[i].choices[0].delta.tool_calls[i]));
+              if(totalResult.choices[0].message.tool_calls.length <= j){
+                totalResult.choices[0].message.tool_calls.push(new ChatCompletionMessageToolCall());
+              }
+
+              if(messages[i].choices[0].delta.tool_calls[j] == undefined ||
+                messages[i].choices[0].delta.tool_calls[j] == null){
+                continue;
+              }
+
+              let toolCall:ChatCompletionMessageToolCall = JSON.parse(
+                JSON.stringify(messages[i].choices[0].delta.tool_calls[j])
+              );
 
 
               if(toolCall.function.name != undefined){
-                totalResult.choices[0].message.tool_calls[i].function.name = toolCall.function.name;
+                totalResult.choices[0].message.tool_calls[j].function.name = toolCall.function.name;
               }
 
               if (toolCall.function.arguments != undefined) {
-                totalResult.choices[0].message.tool_calls[i].function.arguments += toolCall.function.arguments;
+                totalResult.choices[0].message.tool_calls[j].function.arguments += toolCall.function.arguments;
               }
             }
           }

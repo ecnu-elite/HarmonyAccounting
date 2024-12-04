@@ -38,6 +38,7 @@ export default class AccountTable {
   insertData(account: AccountData, callback: Function) {
     const valueBucket: relationalStore.ValuesBucket = generateBucket(account);
     this.accountTable.insertData(valueBucket, callback);
+
   }
 
   /**
