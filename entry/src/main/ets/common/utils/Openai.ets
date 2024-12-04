@@ -5,11 +5,12 @@ import { ChatCompletion,Choice, ChatCompletionChunk,
   ChatCompletionFunctionMessageParam,
   IChatCompletionMessageParam, OpenAI,
   ChatCompletionToolMessageParam,
-  ChatCompletionMessageToolCall,
-  FunctionCall} from '@adrian_wang/openai'
+  ChatCompletionMessageToolCall} from '@adrian_wang/openai'
 import ChatItem from '../../viewmodel/ChatItem';
+import AccountData from '../../viewmodel/AccountData';
 
-import { AiDialogComponent, AiDialogData } from '../../view/AiDialogComponent';
+
+import { AiDialogData } from '../../view/AiDialogComponent';
 import { IChatCompletionPostData } from '@adrian_wang/openai/src/main/ets/AsyncCall';
 import { ChatCompletionToolParam } from '@adrian_wang/openai/src/main/ets/Function';
 import { ChatCompletionMessage } from '@adrian_wang/openai/src/main/ets/ChatCompletion';
@@ -139,11 +140,6 @@ class Openai {
       "time_format": time_format
     }
 
-    /***********************************************************************/
-
-
-
-
     tools.push({
       function:{
         name: "get_current_time",
@@ -152,6 +148,55 @@ class Openai {
       },
       type: "function"
     })
+    let bill_parameters = new Map<string, object>();
+    let bill_properties = new Map<string, object>();
+
+    bill_properties["category"] = {
+      "type": "string",
+      "description": "The category of the bill"
+    };
+    bill_properties["name"] = {
+      "type": "string",
+      "description": "The name of the bill"
+    };
+    bill_properties["amount"] = {
+      "type": "number",
+      "description": "The amount of the bill"
+    };
+    bill_properties["time"] = {
+      "type": "string",
+      "description": "The time of the bill"
+    };
+
+    let items: Map<string, object> = new Map<string, object>();
+
+    items["type"] = "object";
+    items["properties"] = bill_properties;
+
+    let bills = new Map<string, object>();
+
+    bills["type"] = "array";
+    bills["items"] = items;
+
+    bill_parameters["type"] = "object";
+    bill_parameters["properties"] = {
+      "bills": bills
+    };
+
+    tools.push({
+      function: {
+        name: "add_bill",
+        description: "Add a new bill",
+        parameters: bill_parameters
+      },
+      type: "function"
+    });
+
+    /***********************************************************************/
+
+
+
+
 
 
     return {
@@ -161,6 +206,29 @@ class Openai {
       tools: tools
     }
   }
+
+
+  callFunction(functionName:string, functionArguments:string):string {
+
+
+
+    switch (functionName) {
+      case "get_current_time":
+        return new Date().toLocaleTimeString();
+      case "add_bill":
+
+        // 尝试解析arguments，如果失败则返回失败信息
+        try {
+          let argumentsObject: AccountData = JSON.parse(functionArguments);
+        } catch (error) {
+          return "Failed to parse arguments";
+        }
+
+        return "Bill added successfully";
+    }
+
+		return "Function is not implemented";
+	}
 
 
   // 获取非流式数据
