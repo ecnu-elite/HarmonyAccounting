@@ -202,6 +202,9 @@ export class ChatCompletions {
       expectDataType:  http.HttpDataType.STRING,// 可选，指定返回数据的类型
     }
 
+
+
+
     // 填写HTTP请求的URL地址，可以带参数也可以不带参数。URL地址需要开发者自定义。请求的参数可以在extraData中指定
     httpRequest.requestInStream(url, streamInfo).then((data: number) => {
       console.info("requestInStream OK!");

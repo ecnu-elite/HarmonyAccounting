@@ -4,16 +4,15 @@ import { ChatCompletion,Choice, ChatCompletionChunk,
   ChatCompletionAssistantMessageParam,
   ChatCompletionFunctionMessageParam,
   IChatCompletionMessageParam, OpenAI,
-  ChatCompletionToolMessageParam,ChatCompletionTokenLogprob,
-  ChatCompletionMessageToolCall } from '@adrian_wang/openai'
+  ChatCompletionToolMessageParam,
+  ChatCompletionMessageToolCall,
+  FunctionCall} from '@adrian_wang/openai'
 import ChatItem from '../../viewmodel/ChatItem';
 
 import { AiDialogComponent, AiDialogData } from '../../view/AiDialogComponent';
-import { HashMap } from '@kit.ArkTS';
 import { IChatCompletionPostData } from '@adrian_wang/openai/src/main/ets/AsyncCall';
 import { ChatCompletionToolParam } from '@adrian_wang/openai/src/main/ets/Function';
 import { ChatCompletionMessage } from '@adrian_wang/openai/src/main/ets/ChatCompletion';
-import { emitter } from '@kit.BasicServicesKit';
 
 @Observed
 class Openai {
@@ -201,16 +200,49 @@ class Openai {
           totalResult = message;
         }
 
+        // // 将Function Call和Tool的分块消息添加到消息中
+        // if(message.choices[0].message.function_call != undefined){
+        //   if(totalResult.choices[0].message.function_call == undefined){
+        //     totalResult.choices[0].message.function_call = new FunctionCall();
+        //   }else{
+        //
+        //     if(messages[i].choices[0].delta.function_call?.name != undefined){
+        //       totalResult.choices[0].message.function_call.name += messages[i].choices[0].delta.function_call?.name;
+        //     }
+        //
+        //     totalResult.choices[0].message.function_call.arguments +=  messages[i].choices[0].delta.function_call?.arguments;
+        //   }
+        // }
+
+        if(message.choices[0].message.tool_calls != undefined){
+          if(totalResult.choices[0].message.tool_calls == undefined){
+            totalResult.choices[0].message.tool_calls = [];
+          }else{
+            for(let i = 0; i < message.choices[0].message.tool_calls.length; i++){
+
+              let toolCall:ChatCompletionMessageToolCall = JSON.parse(JSON.stringify(messages[i].choices[0].delta.tool_calls[i]));
+
+              totalResult.choices[0].message.tool_calls[i].function.name = toolCall.function.name;
+              totalResult.choices[0].message.tool_calls[i].function.arguments += toolCall.function.arguments;
+            }
+          }
+        }
+
+
         streamFunction(message);
 
 
       }
 
-      afterResponse();
 
       if (totalResult != undefined) {
         processTotalResult(totalResult);
       }
+
+
+      afterResponse();
+
+
     })
 
 
@@ -253,13 +285,13 @@ class Openai {
       originalDelta.function_call
       delta = {
         role: originalDelta.role as string,
-        name: "",
+        // name: "",
         content: originalDelta.content as string,
 
-        function_call: {
-          arguments: originalDelta.function_call?.arguments as string,
-          name: originalDelta.function_call?.name as string
-        },
+        // function_call: {
+        //   arguments: originalDelta.function_call?.arguments as string,
+        //   name: originalDelta.function_call?.name as string
+        // },
         tool_calls: toolCalls
       }
 

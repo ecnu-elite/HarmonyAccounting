@@ -40,9 +40,9 @@ export class ChatCompletionMessageToolCall {
 
 export class ChatCompletionMessage implements IChatCompletionMessageParam{
   role: string = "user"
-  name?: string
+  // name?: string
   content?: string | string[]
-  function_call?: FunctionCall
+  // function_call?: FunctionCall
   tool_calls?: ChatCompletionMessageToolCall[]
 }
 
