@@ -114,6 +114,23 @@ struct MainPage {
     else
       return 2;
   }
+  
+  /** 
+   * 获取账户数据，并按照时间分类
+   * @param accounts
+   */
+  getAccountsSortByTime(accounts:AccountData[]){
+    let accountsSortByTime = new Map<string,AccountData[]>();
+    for (const item of accounts) {
+      let time = item.time.split(' ')[0];
+      if(accountsSortByTime.has(time)){
+        accountsSortByTime.get(time)?.push(item);
+      }else{
+        accountsSortByTime.set(time,[item]);
+      }
+    }
+    return accountsSortByTime;
+  }
 
   getSourceString(name:string): string {
     return getContext(this).resourceManager.getStringByNameSync(name).toString();
@@ -395,6 +412,14 @@ struct MainPage {
     })
   }
 
+  @Builder itemHead(text: string) {
+    // 列表分组的头部组件，对应联系人分组A、B等位置的组件
+    Text(text)
+      .fontSize(20)
+      .backgroundColor('#fff1f3f5')
+      .width('100%')
+      .padding(5)
+  }
 
   @State isActive: boolean = true;
 
@@ -485,65 +510,80 @@ struct MainPage {
             Row() {
               // 创建一个列表，设置元素间距为FULL_SIZE
               List({ space: CommonConstants.FULL_SIZE }) {
-                // 遍历账户数据数组，为每个账户创建一个列表项
-                ForEach(this.accounts, (item: AccountData) => {
-                  // 创建一个列表项
-                  ListItem() {
-                    // 创建一个行布局来容纳列表项内的各个元素
-                    Row() {
-                      // 根据账户类型加载图像，并设置宽度、高宽比和右侧边距
-                      Image(ImageList[item.typeText])
-                        .width($r('app.float.component_size_M'))
-                        .aspectRatio(CommonConstants.FULL_SIZE)
-                        .margin({ right: $r('app.float.edge_size_MP') })
+                
+                
+                ForEach(
+                  Array.from(
+                    this.getAccountsSortByTime(this.accounts)
+                      .keys()
+                  ).sort((a:string,b:string) =>{
+                    // 倒序排序
+                    return a < b ? 1 : -1;
+                  }),(sortName: string)=>{
 
-                      // 显示账户类型的文本描述，并设置高度、字体大小和右侧边距
-                      Text(TextList[item.typeText])
-                        .height($r('app.float.component_size_SM'))
-                        .fontSize($r('app.float.font_size_M'))
-
-                      // 添加一个空白区域，用于布局权重调整
-                      Blank()
-                        .layoutWeight(1)
-
-                      // 根据是否编辑模式，显示不同的内容
-                      if (!this.isEdit) {
-                        // 非编辑模式下显示账户金额和时间，颜色根据账户类型变化
-                        Text(item.accountType === 0 ? '-' + item.amount.toString(): '+' + item.amount.toString())
-                          .fontSize($r('app.float.font_size_M'))
-                          .fontColor(item.accountType === 0 ? $r('app.color.pay_color') : $r('app.color.main_color'))
-                          .align(Alignment.End)
-                          .flexGrow(CommonConstants.FULL_SIZE)
-                      } else {
-                        // 编辑模式下显示选择框
+                  ListItemGroup({ header: this.itemHead(sortName) }) {
+                    // 遍历账户数据数组，为每个账户创建一个列表项
+                    ForEach(this.getAccountsSortByTime(this.accounts).get(sortName), (item: AccountData) => {
+                      // 创建一个列表项
+                      ListItem() {
+                        // 创建一个行布局来容纳列表项内的各个元素
                         Row() {
-                          Toggle({ type: ToggleType.Checkbox })
-                            .onChange((isOn) => {
-                              // 当选择状态变化时，更新待删除列表
-                              if (isOn) {
-                                this.deleteList.push(item);
-                              } else {
-                                let index = this.deleteList.indexOf(item);
-                                this.deleteList.splice(index, 1);
-                              }
-                            })
-                        }
-                        .align(Alignment.End)
-                        .flexGrow(CommonConstants.FULL_SIZE)
-                        .justifyContent(FlexAlign.End)
-                      }
+                          // 根据账户类型加载图像，并设置宽度、高宽比和右侧边距
+                          Image(ImageList[item.typeText])
+                            .width($r('app.float.component_size_M'))
+                            .aspectRatio(CommonConstants.FULL_SIZE)
+                            .margin({ right: $r('app.float.edge_size_MP') })
 
-                    }
-                    // 设置列表项的宽度、内边距，并绑定点击事件
-                    .width(CommonConstants.FULL_WIDTH)
-                    .padding({ left: $r('app.float.edge_size_M'), right: $r('app.float.edge_size_M') })
-                    .onClick(() => {
-                      this.selectListItem(item);
-                      this.dialogController.open();
+                          // 显示账户类型的文本描述，并设置高度、字体大小和右侧边距
+                          Text(TextList[item.typeText])
+                            .height($r('app.float.component_size_SM'))
+                            .fontSize($r('app.float.font_size_M'))
+
+                          // 添加一个空白区域，用于布局权重调整
+                          Blank()
+                            .layoutWeight(1)
+
+                          // 根据是否编辑模式，显示不同的内容
+                          if (!this.isEdit) {
+                            // 非编辑模式下显示账户金额和时间，颜色根据账户类型变化
+                            Text(item.accountType === 0 ? '-' + item.amount.toString(): '+' + item.amount.toString())
+                              .fontSize($r('app.float.font_size_M'))
+                              .fontColor(item.accountType === 0 ? $r('app.color.pay_color') : $r('app.color.main_color'))
+                              .align(Alignment.End)
+                              .flexGrow(CommonConstants.FULL_SIZE)
+                          } else {
+                            // 编辑模式下显示选择框
+                            Row() {
+                              Toggle({ type: ToggleType.Checkbox })
+                                .onChange((isOn) => {
+                                  // 当选择状态变化时，更新待删除列表
+                                  if (isOn) {
+                                    this.deleteList.push(item);
+                                  } else {
+                                    let index = this.deleteList.indexOf(item);
+                                    this.deleteList.splice(index, 1);
+                                  }
+                                })
+                            }
+                            .align(Alignment.End)
+                            .flexGrow(CommonConstants.FULL_SIZE)
+                            .justifyContent(FlexAlign.End)
+                          }
+
+                        }
+                        // 设置列表项的宽度、内边距，并绑定点击事件
+                        .width(CommonConstants.FULL_WIDTH)
+                        .padding({ left: $r('app.float.edge_size_M'), right: $r('app.float.edge_size_M') })
+                        .onClick(() => {
+                          this.selectListItem(item);
+                          this.dialogController.open();
+                        })
+                      }
+                      .width(CommonConstants.FULL_WIDTH)
+                      .height($r('app.float.component_size_LM'))
                     })
+
                   }
-                  .width(CommonConstants.FULL_WIDTH)
-                  .height($r('app.float.component_size_LM'))
                 })
               }
               .width(CommonConstants.FULL_WIDTH)
