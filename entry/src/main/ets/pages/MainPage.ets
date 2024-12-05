@@ -401,8 +401,7 @@ struct MainPage {
         .textAlign(TextAlign.Center)
         .lineHeight(14)
         .fontWeight(500)
-    }
-    .width('100%')
+    }.width('100%')
     .height('100%')
     .justifyContent(FlexAlign.Center)
     .alignItems(HorizontalAlign.Center)
