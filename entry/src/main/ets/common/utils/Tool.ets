@@ -122,7 +122,7 @@ export class Tool {
 
     switch (functionName) {
       case "get_current_time":
-        callback(new Date().toLocaleTimeString());
+        callback(new Date().toLocaleString());
         return;
       case "add_account":
 
