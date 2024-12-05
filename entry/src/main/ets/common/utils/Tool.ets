@@ -72,7 +72,7 @@ export class Tool {
     tools.push({
       function: {
         name: "add_account",
-        description: "Add a new account",
+        description: "Add new accounts",
         parameters: {
           "type": "object",
           "properties": {
@@ -108,13 +108,76 @@ export class Tool {
       type: "function"
     });
 
+    tools.push({
+      function: {
+        name: "update_account",
+        description: "Update an account",
+        parameters: {
+          "type": "object",
+          "properties": {
+            "account": ({
+              "type": "object",
+              "properties": ({
+                "id": ({
+                  "type": "number",
+                  "description": "The id of the account"
+                } as ESObject),
+                "accountType": ({
+                  "type": "number",
+                  "enum": Array.from(this.accountType.values()),
+                  "description": "The accountTypeId of the account"
+                } as ESObject),
+                "typeText": ({
+                  "type": "string",
+                  "enum": Array.from(this.accountType.keys()),
+                  "description": "The name of type of the account"
+                } as ESObject),
+                "amount": ({
+                  "type": "number",
+                  "description": "The amount of the account"
+                } as ESObject),
+                "time": ({
+                  "type": "string",
+                  "description": "The time of the account,example:`2024-12-4 星期三`"
+                } as ESObject)
+              } as ESObject)
+            } as ESObject)
+          }
+        }
+      },
+      type: "function"
+    });
+
+
+    tools.push({
+      function: {
+        name: "delete_account",
+        description: "delete an account",
+        parameters: {
+          "type": "object",
+          "properties": {
+            "account": ({
+              "type": "object",
+              "properties": ({
+                "id": ({
+                  "type": "number",
+                  "description": "The id of the account"
+                } as ESObject),
+              } as ESObject)
+            } as ESObject)
+          }
+        }
+      },
+      type: "function"
+    });
+
     /***********************************************************************/
 
     return tools;
   }
 
 
-  callFunction(functionName: string, functionArguments: string,callback: (res:string)=>void) {
+  callFunction(functionName: string, functionArguments: string, callback: (res: string) => void) {
 
 
     console.debug("Tool", "callFunction", functionName, functionArguments);
@@ -134,7 +197,7 @@ export class Tool {
             functionArguments.substring(functionArguments.indexOf("["), functionArguments.lastIndexOf("]") + 1);
 
           let accountData: AccountData[] = JSON.parse(functionArguments);
-          this.addAccount(accountData,callback);
+          this.addAccount(accountData, callback);
           return;
         } catch (error) {
           callback("Failed to parse arguments");
@@ -144,13 +207,54 @@ export class Tool {
       case "get_accounts":
         this.getAccounts(callback);
         return;
+
+      case "update_account":
+        try {
+
+          let accountDataJson: Record<string, object> = JSON.parse(functionArguments);
+
+          if (accountDataJson["account"] == undefined) {
+            callback("Failed to parse arguments");
+            return;
+          }
+
+          let accountData: AccountData = accountDataJson["account"] as AccountData;
+          this.updateAccount(accountData, callback);
+          return;
+        } catch (error) {
+          callback("Failed to parse arguments");
+          return
+        }
+
+      case "delete_account":
+        try {
+
+          let accountDataJson: Record<string, object> = JSON.parse(functionArguments);
+
+          if (accountDataJson["account"] == undefined) {
+            callback("Failed to parse arguments");
+            return;
+          }
+
+          let accountData: AccountData = accountDataJson["account"] as AccountData;
+          this.deleteAccount(accountData.id, callback);
+          return;
+        } catch (error) {
+          callback("Failed to parse arguments");
+          return
+        }
     }
 
     callback("Function is not implemented");
   }
 
 
-  addAccount(accounts: AccountData[],callback: (res:string)=>void) {
+  /**
+   * 添加账单
+   * @param accounts 账单列表
+   * @param callback
+   */
+  addAccount(accounts: AccountData[], callback: (res: string) => void) {
 
     let res = "Account added successfully";
 
@@ -170,13 +274,14 @@ export class Tool {
       }
       callback(res);
     });
-
-
   }
 
 
-
-  getAccounts(callback:(result:string)=>void){
+  /**
+   * 获取全部账单信息
+   * @param callback
+   */
+  getAccounts(callback: (result: string) => void) {
 
     let res = "empty";
     this.AccountTable.getRdbStore(() => {
@@ -191,4 +296,80 @@ export class Tool {
   }
 
 
+  /**
+   * 在满足条件的情况下获取账单信息
+   * @param account
+   * @param callback
+   */
+  getAccountsByCondition(account: AccountData, callback: (result: string) => void) {
+
+    let res = "empty";
+    this.AccountTable.getRdbStore(() => {
+      // 查询账户数据，从0开始，返回所有匹配的结果
+      this.AccountTable.queryByCondition(account, (result: AccountData[]) => {
+        console.debug("Tool", "getAccounts", JSON.stringify(result));
+        res = JSON.stringify(result);
+        callback(res);
+      });
+    });
+  }
+
+
+  /**
+   * 更新账单信息
+   * @param account 账单信息
+   * @param callback 回调函数
+   */
+  updateAccount(account: AccountData, callback: (result: string) => void) {
+    // 获取RDB存储，回调函数中将执行对数据库的操作
+    this.AccountTable.getRdbStore(() => {
+
+      this.AccountTable.queryByCondition(account, (queryRes: AccountData[]) => {
+
+        if (queryRes.length == 0) {
+          callback("Account not found");
+          return;
+        } else {
+          this.AccountTable.updateData(account, (updateRes: boolean) => {
+            if (updateRes) {
+              callback("Updated successfully");
+            } else {
+              callback("Failed to update account");
+            }
+          })
+        }
+      })
+    });
+  }
+
+
+  /**
+   * 删除账单信息
+   * @param id 账单ID
+   * @param callback 回调函数
+   */
+  deleteAccount(id: number, callback: (result: string) => void) {
+    // 获取RDB存储，回调函数中将执行对数据库的操作
+    this.AccountTable.getRdbStore(() => {
+
+      let account = new AccountData();
+      account.id = id;
+
+      this.AccountTable.queryByCondition(account, (queryRes: AccountData[]) => {
+
+        if (queryRes.length == 0) {
+          callback("Account not found");
+          return;
+        } else {
+          this.AccountTable.deleteData(account, (deleteRes: boolean) => {
+            if (deleteRes) {
+              callback("Deleted successfully");
+            } else {
+              callback("Failed to delete account");
+            }
+          })
+        }
+      })
+    });
+  }
 }

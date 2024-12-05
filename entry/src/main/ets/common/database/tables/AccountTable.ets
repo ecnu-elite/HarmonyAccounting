@@ -99,6 +99,58 @@ export default class AccountTable {
       }
     });
   }
+
+
+  /**
+   * 查询账户数据
+   * @param accountData 查询的账户数据
+   * @param callback 回调函数，查询完成后执行
+   */
+  queryByCondition(accountData:AccountData , callback: Function) {
+    let predicates = new relationalStore.RdbPredicates(CommonConstants.ACCOUNT_TABLE.tableName);
+
+    predicates.equalTo('id',-1);
+
+    if(accountData.id != undefined && accountData.id > 0){
+      predicates.or().equalTo('id', accountData.id);
+    }else{
+      if(accountData.accountType != undefined && accountData.accountType > 0){
+        predicates.or().equalTo('accountType', accountData.accountType);
+      }
+      if(accountData.amount != undefined && accountData.amount > 0){
+        predicates.or().equalTo('amount', accountData.amount);
+      }
+      if(accountData.time != undefined && accountData.time != ''){
+        predicates.or().equalTo('time', accountData.time);
+      }
+    }
+
+    this.accountTable.query(predicates, (resultSet: relationalStore.ResultSet) => {
+      let count: number = resultSet.rowCount;
+      if (count === 0 || typeof count === 'string') {
+        console.log(`${CommonConstants.TABLE_TAG}` + 'Query no results!');
+        callback([]);
+      } else {
+        resultSet.goToFirstRow();
+        const result: AccountData[] = [];
+        for (let i = 0; i < count; i++) {
+          let tmp: AccountData = {
+            id: 0, accountType: 0, typeText: '', amount: 0, time:''
+          };
+          tmp.id = resultSet.getDouble(resultSet.getColumnIndex('id'));
+          tmp.accountType = resultSet.getDouble(resultSet.getColumnIndex('accountType'));
+          tmp.typeText = resultSet.getString(resultSet.getColumnIndex('typeText'));
+          tmp.amount = resultSet.getDouble(resultSet.getColumnIndex('amount'));
+          tmp.time= resultSet.getString(resultSet.getColumnIndex('time'));
+          result[i] = tmp;
+          resultSet.goToNextRow();
+        }
+        callback(result);
+      }
+    });
+  }
+
+
 }
 
 /**

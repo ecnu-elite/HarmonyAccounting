@@ -260,6 +260,18 @@ class Openai {
     let message: ChatCompletion;
     let choices: Choice[] = []
 
+
+    if(originalMessage.choices == undefined){
+      return {
+        id: originalMessage.id,
+        created: originalMessage.created,
+        model: originalMessage.model,
+        object: originalMessage.object,
+        system_fingerprint: originalMessage.system_fingerprint,
+        choices: []
+      }
+    }
+
     for (let j = 0; j < originalMessage.choices.length; j++) {
 
       let originalDelta = originalMessage.choices[j].delta;
