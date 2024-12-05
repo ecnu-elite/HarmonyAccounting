@@ -93,6 +93,8 @@ struct MainPage {
       this.AccountTable.query(0, (result: AccountData[]) => {
         // 将查询结果赋值给accounts属性
         this.accounts = result;
+
+
       }, true);
     });
 
