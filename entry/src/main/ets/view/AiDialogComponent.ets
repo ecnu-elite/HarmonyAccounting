@@ -251,7 +251,7 @@ export struct AiDialogComponent {
             this.data.messages[messageLength].functionProgress = 0
 
 
-            if(functionCall.function.name != undefined){
+            if(functionCall.function.name != undefined && (functionName == undefined || functionName == "")){
               // 显示函数调用名称
               this.data.messages[messageLength].functionName = functionCall.function.name
               functionName = functionCall.function.name
