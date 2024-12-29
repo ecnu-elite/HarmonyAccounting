@@ -97,6 +97,7 @@ export struct AiDialogComponent {
             .width($r('app.float.button_image_width'))// 设置图像的高度
             .height($r('app.float.button_image_height'))// 当图像被点击时，关闭当前控制器（如果存在）
         }
+        .backgroundColor("#FD7D70")
         .width($r('app.float.button_width'))
         .height($r('app.float.button_height'))
         .onClick(() => {
@@ -158,6 +159,7 @@ export struct AiDialogComponent {
             .width($r('app.float.button_image_width'))// 设置图像的高度
             .height($r('app.float.button_image_height'))// 当图像被点击时，关闭当前控制器（如果存在）
         }
+        .backgroundColor("#FD7D70")
         .width($r('app.float.button_width'))
         .height($r('app.float.button_height'))
         .onClick(() => {

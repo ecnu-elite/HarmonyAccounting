@@ -157,6 +157,8 @@ struct MainPage {
       }
     }
     let defOption: Options = new Options({
+      //饼状图颜色
+      color:["#E26C5F","#FFC1AF","#FFA79B","#FF6B6B","#BD291D","#FD7D70",],
       legend: {
         show: true,
         left: '50%',
@@ -170,7 +172,8 @@ struct MainPage {
           fontWeight: 'normal',
           fontFamily: 'sans-serif',
           fontSize: 40
-        }
+        },
+
       },
       tooltip: {
         borderColor: '#EBEBEB',
@@ -200,7 +203,7 @@ struct MainPage {
           label:{
             show:true,
             fontSize:64,
-          }
+          },
         }
       ]
     })
@@ -326,7 +329,6 @@ struct MainPage {
           fontSize:40
         },
         data:this.getSourceString('month_list').split('-'),
-
       },
       yAxis:{
         type:'value',
@@ -362,7 +364,8 @@ struct MainPage {
           label:{
             show:true,
             fontSize:40,
-          }
+          },
+          color:"#BD291D"
         }
         ,{
           name:this.getSourceString('month_income'),
@@ -370,7 +373,8 @@ struct MainPage {
           label:{
             show:true,
             fontSize:10,
-          }
+          },
+          color:"#FD7D70"
         }
       ],
       tooltip:{
