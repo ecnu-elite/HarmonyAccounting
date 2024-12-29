@@ -97,6 +97,7 @@ export struct AiDialogComponent {
             .width($r('app.float.button_image_width'))// 设置图像的高度
             .height($r('app.float.button_image_height'))// 当图像被点击时，关闭当前控制器（如果存在）
         }
+        .backgroundColor("#FD7D70")
         .width($r('app.float.button_width'))
         .height($r('app.float.button_height'))
         .onClick(() => {
@@ -158,6 +159,7 @@ export struct AiDialogComponent {
             .width($r('app.float.button_image_width'))// 设置图像的高度
             .height($r('app.float.button_image_height'))// 当图像被点击时，关闭当前控制器（如果存在）
         }
+        .backgroundColor("#FD7D70")
         .width($r('app.float.button_width'))
         .height($r('app.float.button_height'))
         .onClick(() => {
@@ -251,7 +253,7 @@ export struct AiDialogComponent {
             this.data.messages[messageLength].functionProgress = 0
 
 
-            if(functionCall.function.name != undefined){
+            if(functionCall.function.name != undefined && (functionName == undefined || functionName == "")){
               // 显示函数调用名称
               this.data.messages[messageLength].functionName = functionCall.function.name
               functionName = functionCall.function.name
