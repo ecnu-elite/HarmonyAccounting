@@ -24,7 +24,7 @@ struct MainPage {
   private deleteList: Array<AccountData> = [];
   searchController: SearchController = new SearchController();
   // 初始化对话框控制器，用于控制自定义对话框的显示和隐藏
-  dialogController: CustomDialogController = new CustomDialogController({
+   dialogController: CustomDialogController = new CustomDialogController({
     // 使用DialogComponent构建对话框，传递是否为插入操作和新账户数据
     builder: DialogComponent({
       isInsert: $isInsert,
@@ -173,7 +173,7 @@ struct MainPage {
         }
       },
       tooltip: {
-        borderColor: '#f72659f5',
+        borderColor: '#EBEBEB',
         borderWidth: 1,
         backgroundColor: '#fff',
         textStyle: { // 文本样式配置
@@ -374,7 +374,7 @@ struct MainPage {
         }
       ],
       tooltip:{
-        borderColor:'#f72659f5',
+        borderColor:'#EBEBEB',
         borderWidth:1,
         backgroundColor:'#fff',
         textStyle:{
@@ -397,7 +397,7 @@ struct MainPage {
       Text(title)
         .fontFamily('HarmonyHeiTi-Medium')
         .fontSize(10)
-        .fontColor(this.currentIndex === targetIndex ? '#0A59F7' : 'rgba(0,0,0,0.60)')
+        .fontColor(this.currentIndex === targetIndex ? '#FD7D70' : 'rgba(0,0,0,0.60)')
         .textAlign(TextAlign.Center)
         .lineHeight(14)
         .fontWeight(500)
@@ -612,6 +612,8 @@ struct MainPage {
             .width($r('app.float.component_size_MP')) // 设置按钮宽度
             .height($r('app.float.component_size_MP')) // 设置按钮高度
             .position({ x: CommonConstants.EDIT_POSITION_X, y: CommonConstants.EDIT_POSITION_Y }) // 设置按钮位置
+            .backgroundColor('#EBEBEB')
+            .padding(10)
             .onClick(() => { // 设置按钮点击事件
               this.isInsert = true; // 设置插入状态为true
               this.newAccount = { id: 0, accountType: 0, typeText: '', amount: 0 ,time: ''}; // 初始化新的账户对象
@@ -621,8 +623,10 @@ struct MainPage {
 
             // 定义一个按钮，用于切换到插入状态
             Button() {
-              Image($rawfile('ai.svg')) // 按钮显示一个加号图片
+              Image($rawfile('ai.png')) // 按钮显示一个ai助手图片
             }
+            .backgroundColor('#EBEBEB')
+            .padding(5)
             .width($r('app.float.component_size_MP')) // 设置按钮宽度
             .height($r('app.float.component_size_MP')) // 设置按钮高度
             .position({ x: CommonConstants.AI_POSITION_X, y: CommonConstants.AI_POSITION_Y }) // 设置按钮位置
@@ -663,7 +667,7 @@ struct MainPage {
         // 设置组件的背景颜色为应用程序的背景颜色
         .backgroundColor($r('app.color.background_color'))
       }
-      .tabBar(this.tabBarBuilder(this.getSourceString('keep_accounts'), 0, $rawfile('ic_01_on.svg'), $rawfile('ic_01_off.svg')))
+      .tabBar(this.tabBarBuilder(this.getSourceString('keep_accounts'), 0, $rawfile('record_on.png'), $rawfile('record_off.png')))
 
       TabContent() {
         Column() {
@@ -785,7 +789,7 @@ struct MainPage {
         }
         .height('100%')
       }
-      .tabBar(this.tabBarBuilder(this.getSourceString('Statistics'), 1, $rawfile('ic_02_on.svg'), $rawfile('ic_02_off.svg')))
+      .tabBar(this.tabBarBuilder(this.getSourceString('Statistics'), 1, $rawfile('summarize_on.png'), $rawfile('summarize_off.png')))
 
     }
     .vertical(false)

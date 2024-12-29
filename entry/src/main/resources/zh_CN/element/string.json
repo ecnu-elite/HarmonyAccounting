@@ -26,7 +26,7 @@
     },
     {
       "name": "count_text",
-      "value": "金额"
+      "value": "金额:"
     },
     {
       "name": "input_text",
@@ -86,7 +86,7 @@
     },
     {
       "name": "Time",
-      "value": "时间"
+      "value": "时间:"
     },
     {
       "name": "last_month",

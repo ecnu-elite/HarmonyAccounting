@@ -80,6 +80,15 @@ export struct DialogComponent {
       selected: this.selectedDate,
       // 设置是否显示农历日期，此处设置为不显示
       lunar: false,
+      selectedTextStyle:{
+        color: "#FD7D70"
+      },
+      acceptButtonStyle:{
+        fontColor: "#FD7D70"
+      },
+      cancelButtonStyle:{
+        fontColor: "#FD7D70"
+      },
       // 当用户确认选择日期时的回调函数
       onDateAccept: (value: Date) => {
         // 当用户确认选择日期后，更新选中的日期
@@ -250,65 +259,72 @@ export struct DialogComponent {
 
       // 创建一个Column组件，用于布局文本和输入框
       Column() {
-        // 显示一个文本，说明输入框的用途
-        Text($r('app.string.count_text'))
-          .width(CommonConstants.FULL_WIDTH)
-          .fontSize($r('app.float.font_size_MP'))
-          .fontColor(Color.Black)
-
-        // 创建一个嵌套的Column组件，用于布局TextInput
-        Column() {
+        Row(){
+          // 显示一个文本，说明输入框的用途
+          Text($r('app.string.count_text'))
+            .width("15%")
+            .fontSize($r('app.float.font_size_MP'))
+            .fontColor(Color.Black)
           // 提供一个文本输入框，允许用户输入数字
           TextInput({
             placeholder: $r('app.string.input_text'), // 输入框的提示文本
-            text: this.newAccount.amount === 0 ? this.inputAmount : this.newAccount.amount.toString() // 输入框的默认文本
+
+            //text: this.newAccount.amount === 0 ? this.inputAmount : this.newAccount.amount.toString() // 输入框的默认文本
           })
+            .width("85%")
+            .backgroundColor('#EBEBEB')
+            .border({
+              width:0.5,
+              color:Color.Gray
+            })
+
             .padding({
-              left: CommonConstants.MINIMUM_SIZE,
+              left: '8vp',
               top: CommonConstants.MINIMUM_SIZE,
               bottom: CommonConstants.MINIMUM_SIZE
             })
-            .borderRadius(CommonConstants.MINIMUM_SIZE)
-            .backgroundColor(Color.White)
+            .borderRadius(CommonConstants.HALF_WIDTH)
             .type(InputType.Number)// 设置输入类型为数字
             .onChange((value: string) => { // 输入值变化时的处理函数
               this.inputAmount = value;
             })
-
-
         }
+        .margin({
+          top:"30vp",
+          bottom:"20vp"
+        })
 
-        Text($r('app.string.Time'))
-          .width(CommonConstants.FULL_WIDTH)
-          .fontSize($r('app.float.font_size_MP'))
-          .fontColor(Color.Black)
-        // 创建一个列布局
-        Column() {
+        Row(){
+          Text($r('app.string.Time'))
+            .width('15%')
+            .fontSize($r('app.float.font_size_MP'))
+            .fontColor(Color.Black)
           // 根据条件显示不同的文本内容
           Text(
             // 如果inputData为空，则显示格式化后的selectedDate时间，否则显示inputData的内容
             this.inputData===''?this.getStringTime(this.selectedDate):this.inputData
           )
-          // 为文本内容添加内边距
-          .padding({
-            // 定义内边距的左、上、下边距为CommonConstants.MINIMUM_SIZE
-            left: CommonConstants.MINIMUM_SIZE,
-            top: CommonConstants.MINIMUM_SIZE,
-            bottom: CommonConstants.MINIMUM_SIZE
-          })
-          // 设置文本内容的圆角
-          .borderRadius(CommonConstants.MINIMUM_SIZE)
-          // 设置文本内容的背景颜色为白色
-          .backgroundColor(Color.White)
-          // 设置点击事件处理函数
-          .onClick(() => {
-            // 当文本被点击时，显示日期选择对话框
-            this.showDatePickerDialog();
-          })
+            .width('85%')
+            // 为文本内容添加内边距
+            .padding({
+              // 定义内边距的左、上、下边距为CommonConstants.MINIMUM_SIZE
+              left: '8vp',
+              top: CommonConstants.MINIMUM_SIZE,
+              bottom: CommonConstants.MINIMUM_SIZE
+            })
+              // 设置文本内容的圆角
+            .borderRadius(CommonConstants.MINIMUM_SIZE)
+              // 设置文本内容的背景颜色为白色
+            .backgroundColor(Color.White)
+              // 设置点击事件处理函数
+            .onClick(() => {
+              // 当文本被点击时，显示日期选择对话框
+              this.showDatePickerDialog();
+            })
         }
-
       }
       .width(CommonConstants.FULL_WIDTH) // 设置外层Column组件的宽度
+
       .padding({
         // 设置外层Column组件的外边距
         left: $r('app.float.edge_size_M'),
@@ -326,10 +342,11 @@ export struct DialogComponent {
         Button() {
           Text($r('app.string.confirm_text'))
             .fontSize($r('app.float.font_size_M'))
-            .fontColor(Color.White)
+            .fontColor(Color.Black)
         }
         .width(CommonConstants.FULL_WIDTH)
         .height($r('app.float.component_size_M'))
+        .backgroundColor('#EBEBEB')
         .onClick(() => {
           // 检查账户类型文本是否为空或当前索引与账户类型不匹配
           if (this.newAccount.typeText === '' || this.curIndex !== this.newAccount.accountType) {
@@ -356,7 +373,7 @@ export struct DialogComponent {
           }
         })
       }
-      
+
       // 设置布局权重为充满整个屏幕
       .layoutWeight(CommonConstants.FULL_SIZE)
       // 设置底部、左边和右边的内边距为字体大小L
