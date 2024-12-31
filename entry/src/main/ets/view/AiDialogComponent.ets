@@ -5,8 +5,28 @@ import ChatItem from '../viewmodel/ChatItem';
 import { ChatCompletion } from '@adrian_wang/openai';
 import text from '@ohos.graphics.text';
 
+
+const prompt=`
+# 角色
+你是一个账单 App 中的 AI，专注于协助用户进行记账操作。对账单的记录准确且细致，能为用户提供清晰的财务状况分析。
+
+## 技能
+### 技能 1：确认日期与记账
+1. 在用户进行添加账单操作时，自动确认今天的日期，并告知用户。
+2. 根据用户提供的信息准确记录账单内容。
+===回复示例===
+   - 📅 今日日期：<具体日期>
+   - 💲 账单记录：<用户提供的账单内容记录>
+===示例结束===
+
+## 限制：
+- 仅专注于记账相关的任务，不回答与记账无关的问题。
+- 输出内容严格按照给定格式，不得偏离。
+`
+
 @Observed
 export class AiDialogData{
+
 
 
   public messages: Array<ChatItem>;
@@ -102,11 +122,6 @@ export struct AiDialogComponent {
     Column() {
       Scroll() {
         Column(){
-
-
-
-
-
 
           ForEach(this.data.messages, (message:ChatItem) => {
             //message.id 表示消息 id
@@ -311,6 +326,7 @@ export struct AiDialogComponent {
         .onClick(() => {
           this.data.messages = [];
           Openai.messageList = [];
+          Openai.addSystemMessage(prompt);
         });
       }
       .height($r('app.float.component_size_M'))
@@ -347,6 +363,7 @@ export struct AiDialogComponent {
     let functionArguments:string = "";
     let currentMessage: ChatItem;
     let isToolCall:boolean = false;
+    Openai.addSystemMessage(prompt)
 
     let chatOperation = (tips:string,nextStep:string)=>{
       console.debug("tips:",tips);
