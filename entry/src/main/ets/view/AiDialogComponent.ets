@@ -3,6 +3,7 @@ import Openai from '../common/utils/Openai'
 import CommonConstants from '../common/constants/CommonConstants';
 import ChatItem from '../viewmodel/ChatItem';
 import { ChatCompletion } from '@adrian_wang/openai';
+import text from '@ohos.graphics.text';
 
 @Observed
 export class AiDialogData{
@@ -14,7 +15,65 @@ export class AiDialogData{
   public loadingString: string;
 
   constructor() {
-    this.messages = [];
+    this.messages = [
+    //   {
+    //   id: 1,
+    //   name: '我',
+    //   avatar: '',
+    //   content: '帮我记个账',
+    //   time: '',
+    //   isSelf: true,
+    //   isShowTime: false,
+    //   isFunctionCall: false,
+    //   isShowAvatar: false,
+    //   functionProgress: 0,
+    //   functionName: '',
+    //   functionArguments: '',
+    //   functionResult: ''
+    // },{
+    //   id: 2,
+    //   name: 'ai',
+    //   avatar: '',
+    //   content: '好的，正在为你记账',
+    //   time: '',
+    //   isSelf: false,
+    //   isShowTime: false,
+    //   isFunctionCall: false,
+    //   isShowAvatar: false,
+    //   functionProgress: 0,
+    //   functionName: '',
+    //   functionArguments: '',
+    //   functionResult: ''
+    // },{
+    //   id: 3,
+    //   name: 'ai',
+    //   avatar: '',
+    //   content: '正在调用函数',
+    //   time: '',
+    //   isSelf: false,
+    //   isShowTime: false,
+    //   isFunctionCall: true,
+    //   isShowAvatar: false,
+    //   functionProgress: 100,
+    //   functionName: 'add_bill',
+    //   functionArguments: '1 2 3 4 5 6 7 8 9 1 2 3 4 5 6 7 8 9 1 2 3 4 5 6 7 8 9 1 2 3 4 5 6 7 8 9 1 2 3 4 5 6 7 8 9 1 2 3 4 5 6 7 8 9 ',
+    //   functionResult: '添加成功十条记录'
+    // },{
+    //   id: 4,
+    //   name: 'ai',
+    //   avatar: '',
+    //   content: '执行成功，还有什么需要吗？',
+    //   time: '',
+    //   isSelf: false,
+    //   isShowTime: false,
+    //   isFunctionCall: false,
+    //   isShowAvatar: false,
+    //   functionProgress: 0,
+    //   functionName: '',
+    //   functionArguments: '',
+    //   functionResult: ''
+    // }
+    ];
     this.inputText = '';
     this.isLoading = false;
     this.loadingString = '加载中...';
@@ -45,12 +104,8 @@ export struct AiDialogComponent {
         Column(){
 
 
-          if (this.data.isLoading){
-            Text(this.data.loadingString)
-              .backgroundColor('#f0f0f0')
-              .borderRadius(10)
-              .padding(10);
-          }
+
+
 
 
           ForEach(this.data.messages, (message:ChatItem) => {
@@ -63,29 +118,115 @@ export struct AiDialogComponent {
             //message.isShowTime 表示是否显示时间
             //message.isShowAvatar 表示是否显示头像
             /**
-             * TODO 根据已有的消息渲染消息列表，要求美观点，消息样式就是 ChatList
-             * TODO 用户的消息显示在右边，AI 的消息显示在左边
-             * TODO 时间显示在消息下方，并且只显示一次，如果连续两个消息时间相同，则不显示时间
-             * TODO 如果是 AI 的函数调用，则显示正在进行函数调用进度，且需要描述出调用的具体函数
              * TODO 如果调用完成，需要让用户选择要执行的操作，即显示两个按钮，应用或者放弃
              */
 
+            Flex({ direction: FlexDirection.Column,
+                   justifyContent: message.isSelf? FlexAlign.End : FlexAlign.Start }) {
+              if (message.isSelf) {
+                // 用户自己的消息
+                Flex({ direction: FlexDirection.RowReverse }) {
+                  // 头像
+                  Image($rawfile('profile_user.svg'))
+                    .width(30)
+                    .height(30)
+                    .objectFit(ImageFit.Contain)
+                    .margin({ right: 10 });
 
-            Text(message.isFunctionCall ?
-              '正在调用函数：' + message.functionName + '...' + message.functionProgress + '%' + '调用结果：' + message.functionResult
-              : message.content)
-              .backgroundColor(message.content.startsWith('AI:')? '#f0f0f0' : '#e0e0e0')
-              .borderRadius(10)
-              .padding(10);
+                  // 消息气泡
+                  Flex({ direction: FlexDirection.Column, alignItems: ItemAlign.End }) {
+                    Text(message.content)
+                      .fontSize(16)
+                      .fontColor(Color.White)
+                      .padding(10)
+                      .backgroundColor('#fd7d70')
+                      .borderRadius(15)
+                      .margin({ left: 40, right:10 })
+                      .textAlign(TextAlign.End);
+
+                  }
+                }
+              } else {
+                // AI 的消息
+                Flex({ direction: FlexDirection.Row }) {
+                  // 头像
+                  Image($rawfile('profile_ai.svg'))
+                    .width(30)
+                    .height(30)
+                    .objectFit(ImageFit.Contain)
+                    .margin({ left:10 });
+
+
+                  // 消息气泡
+                  Flex({ direction: FlexDirection.Column, alignItems: ItemAlign.Start }) {
+                    Text(message.content)
+                      .fontSize(16)
+                      .padding(10)
+                      .margin({ left: 10, right:40 })
+                      .backgroundColor('#ffffccc7')
+                      .borderRadius(15);
+                  }
+                  // .padding({
+                  //   // left:10,
+                  //   right: 40,
+                  //   // top:10,
+                  //   // bottom:10
+                  // })
+                }
+              }
+
+              if (message.isFunctionCall) {
+                // 函数调用的消息气泡
+                Flex({ direction: FlexDirection.Row, justifyContent: FlexAlign.Center }) {
+                  Flex({ direction: FlexDirection.Column, alignItems:ItemAlign.Center }) {
+                    Text('正在调用函数：' + message.functionName + '...' + message.functionProgress + '%')
+                      .fontSize(12)
+                      .fontColor(Color.Gray)
+                      .padding(1)
+                    Text(message.functionArguments)
+                      .fontSize(12)
+                      .fontColor(Color.Gray)
+                      .padding(1)
+                      .width(200)
+                      .maxLines(2)
+                      .textOverflow({ overflow: TextOverflow.MARQUEE })
+
+                    if (message.functionProgress === 100) {
+                      // 函数调用完成后的显示
+                      Flex({ direction: FlexDirection.Column, justifyContent: FlexAlign.Center }) {
+                        Text(`调用结果：${message.functionResult}`)
+                          .fontSize(12)
+                          .fontColor(Color.Gray)
+                          .padding(2)
+
+                      }
+                    }
+                  }
+                }
+                .margin({top:10})
+              }
+            }
+            .margin(5);
+
+            // Flex({ justifyContent: message.isSelf? FlexAlign.End : FlexAlign.Start }){
+            //   Text(message.isFunctionCall ?
+            //     '正在调用函数：' + message.functionName + '...' + message.functionProgress + '%' + '调用结果：' + message.functionResult
+            //     : message.content)
+            //     .backgroundColor(message.content.startsWith('AI:')? '#f0f0f0' : '#e0e0e0')
+            //     .borderRadius(10)
+            //     .padding(10)
+            // }
+
           }, (item:ChatItem) => JSON.stringify(item));
-        }
 
+          if (this.data.isLoading){
+            Text(this.data.loadingString)
+              .padding(10);
+          }
+        }
       }
       .height('80%')
-      .border({
-        width: 1,
-        color: '#e0e0e0'
-      })
+
       Row() {
 
         TextArea({text:$$this.data.inputText, placeholder: '输入对话...' })
@@ -100,6 +241,7 @@ export struct AiDialogComponent {
         .backgroundColor("#FD7D70")
         .width($r('app.float.button_width'))
         .height($r('app.float.button_height'))
+        .margin({left:10, right:5})
         .onClick(() => {
 
           if (this.data.inputText === '') {
