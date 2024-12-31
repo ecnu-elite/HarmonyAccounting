@@ -147,25 +147,29 @@ export struct AiDialogComponent {
                   }
                 }
               } else {
-                // AI 的消息
-                Flex({ direction: FlexDirection.Row }) {
-                  // 头像
-                  Image($rawfile('profile_ai.svg'))
-                    .width(30)
-                    .height(30)
-                    .objectFit(ImageFit.Contain)
-                    .margin({ left:10 });
+
+                if(!message.isFunctionCall){
+                  // AI 的消息
+                  Flex({ direction: FlexDirection.Row }) {
+                    // 头像
+                    Image($rawfile('profile_ai.svg'))
+                      .width(30)
+                      .height(30)
+                      .objectFit(ImageFit.Contain)
+                      .margin({ left:10 });
 
 
-                  // 消息气泡
-                  Flex({ direction: FlexDirection.Column, alignItems: ItemAlign.Start }) {
-                    Text(message.content)
-                      .fontSize(16)
-                      .padding(10)
-                      .margin({ left: 10, right:40 })
-                      .backgroundColor('#ffffccc7')
-                      .borderRadius(15);
-                  }
+                    // 消息气泡
+                    Flex({ direction: FlexDirection.Column, alignItems: ItemAlign.Start }) {
+                      Text(message.content)
+                        .fontSize(16)
+                        .padding(10)
+                        .margin({ left: 10, right:40 })
+                        .backgroundColor('#ffffccc7')
+                        .borderRadius(15);
+                    }
+                }
+
                   // .padding({
                   //   // left:10,
                   //   right: 40,

@@ -131,7 +131,7 @@ class Openai {
     return {
       messages: this.messageList,
       // model: "gpt-4o-mini",
-      model: "qwen-plus",
+      model: "qwen-max",
       stream: isStream,
       tools: tools
     }
