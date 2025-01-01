@@ -207,7 +207,7 @@ class Openai {
               );
 
 
-              if(toolCall.function.name != undefined){
+              if(toolCall.function.name != undefined && toolCall.function.name != ""){
                 totalResult.choices[0].message.tool_calls[j].function.name = toolCall.function.name;
               }
 
@@ -229,6 +229,8 @@ class Openai {
 
     emitter.on("httpEnd",()=>{
 
+      emitter.off("httpEnd");
+
       if (totalResult != undefined) {
         processTotalResult(totalResult);
       }
@@ -237,10 +239,8 @@ class Openai {
         afterResponse();
       }, 300);
 
-      // afterResponse();
+      // afterResponse()
 
-
-      emitter.off("httpEnd");
 
     })
 

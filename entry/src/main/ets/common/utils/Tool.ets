@@ -152,7 +152,7 @@ export class Tool {
     tools.push({
       function: {
         name: "delete_account",
-        description: "delete an account",
+        description: `delete an account. Example usage: {\"account\": {\"id\": 6}}`,
         parameters: {
           "type": "object",
           "properties": {
@@ -229,15 +229,47 @@ export class Tool {
       case "delete_account":
         try {
 
+          //`{"account":{"{"account":{"{"account":{"account": {"id": 44}}}`
+          // 统计"{"的个数，并在最右边补充缺少的"}"，确保括号是匹配起来的
+          while (functionArguments.split("{").length > functionArguments.split("}").length) {
+            functionArguments += "}";
+          }
+
+          console.debug("Tool", "delete_account", functionArguments);
+
           let accountDataJson: Record<string, object> = JSON.parse(functionArguments);
 
-          if (accountDataJson["account"] == undefined) {
-            callback("Failed to parse arguments");
+          // 由于提供的 arguments 可能是 { "account": { "id": 6 } }，也可能是 { "account": { "account": { "id": 6 } } }，
+          // 所以使用循环来获取到包含 id 属性的 account 对象
+          // 使用 while 循环查找包含 id 属性的 account 对象
+          let currentObj: Record<string, object>| undefined = accountDataJson;
+          while (currentObj != undefined && typeof currentObj === 'object') {
+            if (currentObj["id"] !== undefined) {
+              break; // 找到包含 id 的对象，退出循环
+            }
+
+            if (currentObj["account"] !== undefined) {
+              currentObj = currentObj["account"] as Record<string, object>; // 继续查找下一层
+            } else {
+              currentObj = undefined; // 没有找到 account 属性，终止循环
+            }
+          }
+
+          let id = -1;
+          if (currentObj == undefined || currentObj["id"] == undefined) {
+            callback(`Failed to parse arguments, make sure the account object contains an id property. Example usage: {"account": {"id": 6}}`);
             return;
           }
 
-          let accountData: AccountData = accountDataJson["account"] as AccountData;
-          this.deleteAccount(accountData.id, callback);
+          if(typeof currentObj["id"] != "number"){
+            callback(`Failed to parse arguments, make sure the account object contains an id property. Example usage: {"account": {"id": 6}}`);
+          }else{
+            id = currentObj["id"] as number;
+          }
+
+
+
+          this.deleteAccount(id, callback);
           return;
         } catch (error) {
           callback("Failed to parse arguments");
@@ -247,6 +279,7 @@ export class Tool {
 
     callback("Function is not implemented");
   }
+
 
 
   /**

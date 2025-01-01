@@ -1,9 +1,9 @@
-
 import Openai from '../common/utils/Openai'
 import CommonConstants from '../common/constants/CommonConstants';
 import ChatItem from '../viewmodel/ChatItem';
 import { ChatCompletion } from '@adrian_wang/openai';
 import text from '@ohos.graphics.text';
+import { emitter } from '@kit.BasicServicesKit';
 
 
 const prompt=`
@@ -12,9 +12,9 @@ const prompt=`
 
 ## 技能
 ### 技能 1: 添加账单
-在用户进行添加账单操作前，调用函数确认今天的日期，并根据日期为用户提供相应的提示。
+自动调用函数确认今天的日期，并根据日期为用户提供提示后直接进行添加账单操作。
 ===回复示例===
-- 今天的日期是：<具体日期>。是否确认在今天添加账单？
+- 今天的日期是：2025 年 01 月 01 日。现在为你添加账单。
 ===示例结束===
 
 ### 技能 2: 删除账单
@@ -24,9 +24,17 @@ const prompt=`
 ===示例结束===
 
 ### 技能 3: 修改账单
-在用户进行修改账单操作前，同样先获取账单数据，为用户提供当前账单的详细信息，并引导用户进行修改。
+先获取账单数据，为用户提供当前账单的详细信息后直接引导用户进行修改。
 ===回复示例===
-- 账单数据：<具体账单内容>。请明确需要修改的部分，以便我为你进行准确的修改。
+- 账单数据：<具体账单内容>。现在请明确需要修改的部分，以便我为你进行准确的修改。
+===示例结束===
+
+### 技能 4: 查询账单
+1. 当用户请求查询账单时，直接询问用户具体的查询需求，例如查询特定日期的账单、查询某一类型的账单等��
+2. 根据用户的需求决定是否调用查询今天日期的函数。如果用户需要查询特定日期的账单且该日期为今天，或者用户需求未明确指定日期但可能与今天相关，可以调用函数确认今天的日期以便更好地满足用户需求。
+3. 根据用户需求进行账单查询，并以清晰的格式呈现查询结果。
+===回复示例===
+- 查询结果：<具体账单内容列表>
 ===示例结束===
 
 ## 限制:
@@ -142,9 +150,6 @@ export struct AiDialogComponent {
             //message.isSelf 表示是否是用户自己发送的
             //message.isShowTime 表示是否显示时间
             //message.isShowAvatar 表示是否显示头像
-            /**
-             * TODO 如果调用完成，需要让用户选择要执行的操作，即显示两个按钮，应用或者放弃
-             */
 
             Flex({ direction: FlexDirection.Column,
                    justifyContent: message.isSelf? FlexAlign.End : FlexAlign.Start }) {
@@ -173,7 +178,7 @@ export struct AiDialogComponent {
                 }
               } else {
 
-                if(!message.isFunctionCall){
+                if(message.content != undefined && message.content != ''){
                   // AI 的消息
                   Flex({ direction: FlexDirection.Row }) {
                     // 头像
@@ -373,6 +378,7 @@ export struct AiDialogComponent {
     let functionArguments:string = "";
     let currentMessage: ChatItem;
     let isToolCall:boolean = false;
+
     Openai.addSystemMessage(prompt)
 
     let chatOperation = (tips:string,nextStep:string)=>{
@@ -432,10 +438,10 @@ export struct AiDialogComponent {
               functionName = functionCall.function.name
             }
 
-            if (functionCall.function.arguments != undefined) {
-              this.data.messages[messageLength].functionArguments += functionCall.function.arguments
-              functionArguments += functionCall.function.arguments
-            }
+            // if (functionCall.function.arguments != undefined) {
+            //   this.data.messages[messageLength].functionArguments += functionCall.function.arguments
+            //   functionArguments += functionCall.function.arguments
+            // }
 
             if (toolCallId == "" && functionCall.id != undefined) {
               toolCallId = functionCall.id;
@@ -466,6 +472,26 @@ export struct AiDialogComponent {
         console.debug("消息生成结束，将消息天假到最后")
         // 添加消息到消息列表便于显示
         Openai.addMessage(totalResponse.choices[0].message)
+
+        let finalToolCalls = totalResponse.choices[0].message.tool_calls
+        if (finalToolCalls && finalToolCalls.length > 0) {
+          isToolCall = true
+          let finalCall = finalToolCalls[0]
+          toolCallId = finalCall.id || ""
+          if (finalCall.function.name != undefined && finalCall.function.name != "") {
+            functionName = finalCall.function.name || ""
+          }
+
+          functionArguments = finalCall.function.arguments || ""
+          // 显示函数调用提示等
+          this.data.messages[messageLength].isFunctionCall = true
+          this.data.messages[messageLength].functionProgress = 0
+          this.data.messages[messageLength].functionName = functionName
+          this.data.messages[messageLength].functionArguments = functionArguments
+        } else {
+          // 当前无函数调用，隐藏加载中
+          this.data.isLoading = false
+        }
       },()=>{
         console.log("函数调用开始",JSON.stringify(currentMessage))
 
@@ -519,13 +545,20 @@ export struct AiDialogComponent {
 
     getContext(this).eventHub.on("toolCallEnd",()=>{
       setTimeout(()=>{
-        chatOperation("工具调用结束，继续下一步","userMessageSend");
+        chatOperation("工具调用结束，继续下一步","toolCallEnd");
       },500)
 
     })
-
   }
 
+  aboutToDisappear(): void {
+    Openai.messageList = []
+    // 前面的对话都不作数了
+    emitter.off("httpEnd");
+    getContext(this).eventHub.off("userMessageSend")
+    getContext(this).eventHub.off("toolCallEnd")
+
+  }
 
 
 }
