@@ -84,7 +84,7 @@ export class Tool {
                   "accountType": ({
                     "type": "number",
                     "enum": Array.from(this.accountType.values()),
-                    "description": "The accountTypeId of the account"
+                    "description": "The accountTypeId of the account, where 1 represents income and 0 represents expenditure"
                   } as ESObject),
                   "typeText": ({
                     "type": "string",
@@ -125,7 +125,7 @@ export class Tool {
                 "accountType": ({
                   "type": "number",
                   "enum": Array.from(this.accountType.values()),
-                  "description": "The accountTypeId of the account"
+                  "description": "The accountTypeId of the account, where 1 represents income and 0 represents expenditure"
                 } as ESObject),
                 "typeText": ({
                   "type": "string",
