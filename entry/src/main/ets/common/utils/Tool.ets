@@ -219,6 +219,11 @@ export class Tool {
           }
 
           let accountData: AccountData = accountDataJson["account"] as AccountData;
+
+          // ai调用可能会有负数，所以这里处理一下
+          if (accountData.amount !== undefined && accountData.amount < 0) {
+            accountData.amount = -accountData.amount;
+          }
           this.updateAccount(accountData, callback);
           return;
         } catch (error) {
@@ -297,6 +302,10 @@ export class Tool {
         for (let account of accounts) {
           console.debug("Tool", "addAccount", JSON.stringify(account));
           account.id = 0;
+          // ai调用可能会有负数，所以这里处理一下
+          if (account.amount !== undefined && account.amount < 0) {
+            account.amount = -account.amount;
+          }
           this.AccountTable.insertData(account, (id: number) => {
             console.log("Account add ID:", id);
           })
