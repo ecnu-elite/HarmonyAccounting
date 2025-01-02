@@ -363,7 +363,7 @@ struct MainPage {
           data:monthPaydatas,
           label:{
             show:true,
-            fontSize:40,
+            fontSize:30,
           },
           color:"#BD291D"
         }
@@ -372,7 +372,7 @@ struct MainPage {
           data:monthIncomedatas,
           label:{
             show:true,
-            fontSize:10,
+            fontSize:30,
           },
           color:"#FD7D70"
         }
